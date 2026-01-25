@@ -34,7 +34,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-slate-900">Scan Parking Sign</h3>
-        <p className="text-sm text-slate-500 mt-2">Take a photo of the sign clearly to see the interpretation.</p>
+        <p className="text-sm text-slate-500 mt-2">Take a photo or choose a clear image from your gallery.</p>
         
         <button
           onClick={triggerUpload}
@@ -65,7 +65,6 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
         ref={fileInputRef}
         onChange={handleFileChange}
         accept="image/*"
-        capture="environment"
         className="hidden"
       />
       
