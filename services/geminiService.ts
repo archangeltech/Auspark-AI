@@ -9,12 +9,18 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey || apiKey === "undefined") {
+    throw new Error("API Key is missing. Please ensure API_KEY is set in your Vercel Environment Variables and redeploy.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const base64Data = base64Image.split(',')[1] || base64Image;
 
   const locationContext = location 
     ? `Current Location: Lat ${location.lat}, Lng ${location.lng}.`
-    : "Location unavailable. Assume standard Australian capital city rules (e.g. Sydney/Melbourne).";
+    : "Location unavailable. Assume standard Australian capital city rules.";
 
   const permitContext = `
     User Permits:
@@ -34,16 +40,16 @@ export const interpretParkingSign = async (
     - ${permitContext}
 
     AUSTRALIAN RULES PRIORITY (CRITICAL):
-    1. NO STOPPING / CLEARWAY: If active, ALWAYS forbidden. Permits do NOT grant stopping rights in No Stopping zones or Clearways during restricted hours.
-    2. LOADING ZONES: Only allowed if Loading Zone Permit = YES or for quick commercial activity.
+    1. NO STOPPING / CLEARWAY: If active, ALWAYS forbidden. Permits do NOT grant stopping rights here.
+    2. LOADING ZONES: Only allowed if Loading Zone Permit = YES.
     3. TIMED PARKING: Check hours. If "Permit Holders Excepted" matches Resident Area, user can park indefinitely. 
-    4. MPS (DISABILITY): In NSW/VIC, MPS holders often get 2x time or unlimited time in 30min+ zones. Apply these logic rules.
+    4. MPS (DISABILITY): In NSW/VIC, MPS holders often get 2x time or unlimited time in 30min+ zones.
 
     OUTPUT JSON:
     - status: "ALLOWED", "FORBIDDEN", or "RESTRICTED"
     - canParkNow: boolean
     - summary: A clear 4-5 word verdict.
-    - explanation: Detail exactly why (e.g. "Zone is restricted to 1P until 6pm, but your resident permit grants exemption").
+    - explanation: Detail exactly why.
     - permitApplied: Name of permit if it enabled parking.
     - nextStatusChange: Time when the user MUST move the car.
     - timeRemainingMinutes: Minutes left until forbidden.
@@ -84,7 +90,6 @@ export const interpretParkingSign = async (
     return JSON.parse(resultText) as ParkingInterpretation;
   } catch (error: any) {
     console.error("Gemini Interpretation Error:", error);
-    if (error.message?.includes("API_KEY")) throw new Error("System configuration error (API Key).");
-    throw new Error("Analysis failed. Try taking a closer, more stable photo of the sign.");
+    throw new Error(error.message || "Analysis failed. Ensure your photo is clear.");
   }
 };
