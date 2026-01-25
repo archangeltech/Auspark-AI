@@ -1,11 +1,19 @@
-<div align="center">
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+# AusPark AI - Deployment Guide
 
-  <h1>Built with AI Studio</h2>
+## Mobile Testing (Local)
+1. Run your server: `npm start`
+2. Install localtunnel: `npm install -g localtunnel`
+3. Run: `lt --port 8080`
+4. Open the generated URL on your iPhone/Android.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Production (Vercel - Recommended)
+1. Push this folder to a GitHub repository.
+2. Link the repository to [Vercel](https://vercel.com).
+3. Add your `API_KEY` in the Environment Variables section.
+4. Deploy.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+## Production (Google Cloud Run)
+The `server.js` is already configured for Cloud Run. 
+- Build command: `gcloud builds submit --tag gcr.io/PROJECT-ID/auspark-ai`
+- Deploy command: `gcloud run deploy --image gcr.io/PROJECT-ID/auspark-ai --platform managed --set-env-vars API_KEY=YOUR_KEY`

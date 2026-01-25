@@ -1,0 +1,10 @@
+
+{
+  "name": "auspark-ai",
+  "version": "1.0.0",
+  "description": "AI-powered Australian parking sign interpreter",
+  "dependencies": {},
+  "scripts": {
+    "start": "node server.js"
+  }
+}

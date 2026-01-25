@@ -1,0 +1,36 @@
+{
+  "short_name": "AusPark AI",
+  "name": "AusPark AI - Parking Sign Interpreter",
+  "description": "AI-powered interpreter for Australian parking signs. Know instantly if you can park now.",
+  "categories": ["utilities", "navigation", "travel"],
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2990/2990924.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2990/2990924.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan Sign",
+      "short_name": "Scan",
+      "description": "Instantly scan a new parking sign",
+      "url": "/",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/2990/2990924.png", "sizes": "192x192" }]
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "prefer_related_applications": false
+}
