@@ -1,7 +1,7 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { ParkingInterpretation, UserProfile } from "../types";
 
+// Interpret parking sign using Gemini 3 Pro for complex visual reasoning and logic tasks
 export const interpretParkingSign = async (
   base64Image: string,
   currentTime: string,
@@ -9,13 +9,9 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  const apiKey = process.env.API_KEY;
+  // Always initialize with the environment variable directly as per guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  if (!apiKey || apiKey === "undefined") {
-    throw new Error("API Key is missing. Please ensure API_KEY is set in your Vercel Environment Variables and redeploy.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
   const base64Data = base64Image.split(',')[1] || base64Image;
 
   const locationContext = location 
@@ -31,33 +27,27 @@ export const interpretParkingSign = async (
   `;
 
   const prompt = `
-    TASK: Determine if parking is allowed for the user's specific profile right now.
+    TASK: Analyze the parking sign image and determine if the user can park right now.
     
-    CONTEXT:
-    - Current Day: ${userDay}
-    - Current Time: ${currentTime}
+    CURRENT STATUS:
+    - Day: ${userDay}
+    - Time: ${currentTime}
     - ${locationContext}
-    - ${permitContext}
+    - User Permits: ${permitContext}
 
-    AUSTRALIAN RULES PRIORITY (CRITICAL):
-    1. NO STOPPING / CLEARWAY: If active, ALWAYS forbidden. Permits do NOT grant stopping rights here.
-    2. LOADING ZONES: Only allowed if Loading Zone Permit = YES.
-    3. TIMED PARKING: Check hours. If "Permit Holders Excepted" matches Resident Area, user can park indefinitely. 
-    4. MPS (DISABILITY): In NSW/VIC, MPS holders often get 2x time or unlimited time in 30min+ zones.
+    AUSTRALIAN PARKING RULES & PRIORITY:
+    1. Clearways/No Stopping: Absolute priority. No parking allowed.
+    2. Loading Zones: Only if user has Loading Zone Permit.
+    3. Disability (MPS): Holders often get extra time (e.g., double time or unlimited in some councils).
+    4. Resident Permits: Exempt from timed restrictions in their specific zone.
 
-    OUTPUT JSON:
-    - status: "ALLOWED", "FORBIDDEN", or "RESTRICTED"
-    - canParkNow: boolean
-    - summary: A clear 4-5 word verdict.
-    - explanation: Detail exactly why.
-    - permitApplied: Name of permit if it enabled parking.
-    - nextStatusChange: Time when the user MUST move the car.
-    - timeRemainingMinutes: Minutes left until forbidden.
+    Provide a concise, accurate verdict.
   `;
 
   try {
+    // Upgrade to gemini-3-pro-preview for high-quality complex reasoning on visual data
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-pro-preview', 
       contents: {
         parts: [
           { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
@@ -65,15 +55,15 @@ export const interpretParkingSign = async (
         ]
       },
       config: {
-        thinkingConfig: { thinkingBudget: 4000 },
+        // Letting the model manage reasoning tokens for better accuracy
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            status: { type: Type.STRING },
+            status: { type: Type.STRING, description: "ALLOWED, FORBIDDEN, or RESTRICTED" },
             canParkNow: { type: Type.BOOLEAN },
-            summary: { type: Type.STRING },
-            explanation: { type: Type.STRING },
+            summary: { type: Type.STRING, description: "Short verdict (e.g. 'Park here for 2 hours')" },
+            explanation: { type: Type.STRING, description: "Detailed reason why" },
             rules: { type: Type.ARRAY, items: { type: Type.STRING } },
             permitRequired: { type: Type.BOOLEAN },
             permitApplied: { type: Type.STRING },
@@ -85,11 +75,12 @@ export const interpretParkingSign = async (
       }
     });
 
-    const resultText = response.text;
-    if (!resultText) throw new Error("AI returned an empty response.");
+    // Access the .text property directly (not a method)
+    const resultText = response.text?.trim();
+    if (!resultText) throw new Error("AI response was empty.");
     return JSON.parse(resultText) as ParkingInterpretation;
   } catch (error: any) {
     console.error("Gemini Interpretation Error:", error);
-    throw new Error(error.message || "Analysis failed. Ensure your photo is clear.");
+    throw new Error(error.message || "Could not analyze sign. Try a closer, clearer photo.");
   }
 };

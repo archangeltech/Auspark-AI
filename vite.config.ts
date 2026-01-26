@@ -1,31 +1,31 @@
-
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// Fix: Import process from node:process to provide proper types for the Node.js environment within vite.config.ts
-import process from 'node:process';
+import process from 'process';
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env vars regardless of the `VITE_` prefix.
+  // Load all environment variables (including those without VITE_ prefix)
+  // process.cwd() is used here to get the project root for .env loading
   const env = loadEnv(mode, process.cwd(), '');
   
+  // Vercel sets the variables in the environment during build.
+  // We prioritize the loaded env, then fall back to process.env.
+  const apiKey = env.API_KEY || process.env.API_KEY || '';
+
   return {
     plugins: [react()],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY)
+      'process.env.API_KEY': JSON.stringify(apiKey)
     },
     build: {
       outDir: 'dist',
-      sourcemap: true,
-      // Ensure the service worker and other assets are handled correctly
+      sourcemap: false,
       rollupOptions: {
-        input: {
-          main: './index.html',
+        output: {
+          manualChunks: {
+            'vendor': ['react', 'react-dom', '@google/genai']
+          }
         }
       }
-    },
-    server: {
-      port: 8080
     }
   };
 });
