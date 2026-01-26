@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ParkingInterpretation, UserProfile } from "../types";
 
-// Interpret parking sign using Gemini 3 Pro for complex visual reasoning and logic tasks
+// Interpret parking sign using Gemini 3 Flash for high speed and higher free-tier quota availability
 export const interpretParkingSign = async (
   base64Image: string,
   currentTime: string,
@@ -9,13 +9,12 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  // The value of process.env.API_KEY is injected at BUILD TIME by Vite.
-  // If this is empty, it means the API_KEY was not set in Vercel/Environment during the build.
+  // Always initialize with the environment variable directly
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
     throw new Error(
-      "API Key is missing. Please: 1. Ensure 'API_KEY' is set in Vercel Environment Variables. 2. Redeploy the project to trigger a new build with the key."
+      "API Key is missing. Please ensure 'API_KEY' is set in your Vercel Environment Variables and redeploy."
     );
   }
 
@@ -54,9 +53,10 @@ export const interpretParkingSign = async (
   `;
 
   try {
-    // Upgrade to gemini-3-pro-preview for high-quality complex reasoning on visual data
+    // Switching to gemini-3-flash-preview to resolve 429 RESOURCE_EXHAUSTED errors.
+    // Flash models are much more accessible on the free tier.
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', 
+      model: 'gemini-3-flash-preview', 
       contents: {
         parts: [
           { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
@@ -88,6 +88,12 @@ export const interpretParkingSign = async (
     return JSON.parse(resultText) as ParkingInterpretation;
   } catch (error: any) {
     console.error("Gemini Interpretation Error:", error);
+    
+    // Specifically catch and explain quota errors for better user experience
+    if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error("Free tier limit reached. Please wait 60 seconds and try again. For permanent access, consider enabling billing on your Google AI project.");
+    }
+    
     throw new Error(error.message || "Could not analyze sign. Try a closer, clearer photo.");
   }
 };
