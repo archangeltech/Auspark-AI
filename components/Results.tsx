@@ -24,6 +24,16 @@ const Results: React.FC<ResultsProps> = ({
   const [showThanks, setShowThanks] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
 
+  // Hard safety check for blank screen prevention
+  if (!data || !data.results || data.results.length === 0) {
+    return (
+      <div className="p-10 text-center animate-fade-in">
+        <p className="text-slate-500 font-bold">Could not read sign results. Please try again.</p>
+        <button onClick={onReset} className="mt-4 bg-slate-900 text-white px-6 py-2 rounded-xl">Back</button>
+      </div>
+    );
+  }
+
   const activeResult: DirectionalResult = data.results[activeIdx] || data.results[0];
   const isAllowed = activeResult.canParkNow;
 
@@ -134,17 +144,18 @@ const Results: React.FC<ResultsProps> = ({
           </div>
         </div>
 
+        {/* Prominent Highlighting for Duration */}
         {isAllowed && durationText && (
           <div className="mb-6 bg-emerald-50 border-2 border-emerald-500/20 rounded-2xl p-5 flex items-center gap-4 animate-fade-in shadow-sm">
-            <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md">
+            <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md shrink-0">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Maximum Parking Duration</p>
-              <p className="text-xl font-bold text-slate-900 leading-tight">
-                Up to <span className="text-emerald-600 px-1 bg-emerald-100 rounded-md font-black">{durationText}</span> allowed here.
+              <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Time Limit</p>
+              <p className="text-lg font-bold text-slate-900 leading-tight">
+                Maximum <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg font-black inline-block transform -rotate-1 shadow-sm">{durationText}</span> paid parking allowed.
               </p>
             </div>
           </div>
@@ -194,7 +205,7 @@ const Results: React.FC<ResultsProps> = ({
           </p>
           
           <div className="flex flex-wrap gap-2">
-            {activeResult.rules.map((rule, idx) => (
+            {(activeResult.rules || []).map((rule, idx) => (
               <span key={idx} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
                 {formatRuleTag(rule)}
               </span>

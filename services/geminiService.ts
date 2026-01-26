@@ -36,9 +36,8 @@ export const interpretParkingSign = async (
     You are an expert Australian Parking Sign Interpreter. Analyze the provided image of parking sign(s).
     
     CRITICAL INSTRUCTION: Detect Arrows.
-    Many Australian signs have a left arrow, a right arrow, or both.
     - If the sign has arrows pointing in different directions (e.g. Left is 1 hour, Right is No Stopping), you MUST return TWO results in the 'results' array: one for 'left' and one for 'right'.
-    - If there are no specific arrows or only one direction, return a single result with direction 'general' or the specific direction detected.
+    - If there are no specific arrows, return a single result with direction 'general'.
 
     CONTEXT:
     - Current Time: ${currentTime}
@@ -52,18 +51,20 @@ export const interpretParkingSign = async (
 
     AUSTRALIAN RULES KNOWLEDGE (REFINED):
     1. DISABILITY (MPS) PERMIT RULES:
-       - Outside signed hours, MPS holders often get a 4-hour limit in otherwise unrestricted zones.
        - Inside signed hours:
-         * Sign > 30 mins -> Unlimited time (NSW) or Double Time up to 4 hrs (VIC/QLD).
-         * Sign = 30 mins -> 2 hours.
-         * Sign < 30 mins -> 30 minutes.
+         * Sign = 1 hour -> User gets 2 hours.
+         * Sign = 30 mins -> User gets 2 hours.
+         * Sign < 30 mins -> User gets 30 minutes.
+         * Sign > 1 hour -> User often gets Unlimited (NSW) or capped extension (VIC/QLD).
+       - Outside signed hours (e.g. if sign is 9:30am-7:30pm and it is now 8pm):
+         * In many Australian council zones (like Melbourne/Sydney), MPS holders are capped at 4 hours total in otherwise unrestricted zones.
     2. RESIDENT PERMITS: Exempt from time limits if area matches.
     3. LOADING ZONES: Allowed for user if 'hasLoadingZonePermit' is true.
     4. CLEARWAYS / NO STOPPING: No permits allowed.
 
     TASK:
     - Return a JSON object with a 'results' array.
-    - Each item in 'results' must specify its 'direction' ('left', 'right', or 'general').
+    - Calculate 'timeRemainingMinutes' accurately including permit extensions.
   `;
 
   try {
@@ -109,7 +110,6 @@ export const interpretParkingSign = async (
     if (!resultText) throw new Error("Empty AI response.");
     const parsed = JSON.parse(resultText);
     
-    // Safety: ensure at least one result
     if (!parsed.results || parsed.results.length === 0) {
       throw new Error("AI failed to interpret directional results.");
     }
