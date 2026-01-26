@@ -35,31 +35,35 @@ export const interpretParkingSign = async (
   const prompt = `
     You are an expert Australian Parking Sign Interpreter. Analyze the provided image of parking sign(s).
     
+    CRITICAL INSTRUCTION: Detect Arrows.
+    Many Australian signs have a left arrow, a right arrow, or both.
+    - If the sign has arrows pointing in different directions (e.g. Left is 1 hour, Right is No Stopping), you MUST return TWO results in the 'results' array: one for 'left' and one for 'right'.
+    - If there are no specific arrows or only one direction, return a single result with direction 'general' or the specific direction detected.
+
     CONTEXT:
     - Current Time: ${currentTime}
     - Current Day: ${userDay}
     - ${locationContext}
     ${permitContext}
 
-    AUSTRALIAN RULES KNOWLEDGE (CRITICAL):
-    1. DISABILITY (MPS): 
-       - Sign P 5 mins -> MPS gets 30 mins.
-       - Sign P 30 mins -> MPS gets 2 hours.
-       - Sign P > 30 mins -> MPS gets unlimited time.
-       - MPS holders can park in dedicated "Disabled Only" (Wheelchair logo) spots.
-    2. RESIDENT PERMITS:
-       - Exempt from time limits or "Permit Holders Only" IF the sign matches the resident area.
-    3. LOADING ZONES (CRITICAL):
-       - Default: For goods vehicles/couriers only.
-       - SPECIAL EXEMPTION: If the user has a "Loading Zone Permit", they are PERMITTED to park in a Loading Zone for the duration specified (usually 15-30 mins) even if their vehicle is NOT a goods vehicle. 
-       - If 'hasLoadingZonePermit' is true, interpret "Loading Zone" signs as ALLOWED for the user.
-    4. CLEARWAYS/NO STOPPING:
-       - NO PERMITS (including MPS/Loading) allow parking here. Strict prohibition.
+    TERMINOLOGY PREFERENCE (CRITICAL):
+    - Do NOT use the "P" shorthand in the output (e.g., avoid "1P", "2P", "1/2P").
+    - ALWAYS use full words: "1 hour", "2 hours", "30 minutes" instead.
+
+    AUSTRALIAN RULES KNOWLEDGE (REFINED):
+    1. DISABILITY (MPS) PERMIT RULES:
+       - Outside signed hours, MPS holders often get a 4-hour limit in otherwise unrestricted zones.
+       - Inside signed hours:
+         * Sign > 30 mins -> Unlimited time (NSW) or Double Time up to 4 hrs (VIC/QLD).
+         * Sign = 30 mins -> 2 hours.
+         * Sign < 30 mins -> 30 minutes.
+    2. RESIDENT PERMITS: Exempt from time limits if area matches.
+    3. LOADING ZONES: Allowed for user if 'hasLoadingZonePermit' is true.
+    4. CLEARWAYS / NO STOPPING: No permits allowed.
 
     TASK:
-    - Determine 'canParkNow' (Boolean).
-    - If 'canParkNow' is true because of a specific permit (Disability, Resident, Loading Zone), set 'permitApplied' to that permit's name. 
-    - If NO permit was used or helped, set 'permitApplied' to null (literal null, not the string "null").
+    - Return a JSON object with a 'results' array.
+    - Each item in 'results' must specify its 'direction' ('left', 'right', or 'general').
   `;
 
   try {
@@ -76,21 +80,27 @@ export const interpretParkingSign = async (
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            status: { 
-              type: Type.STRING, 
-              enum: ["ALLOWED", "FORBIDDEN", "RESTRICTED", "UNKNOWN"],
-              description: "The general status of the parking zone."
-            },
-            canParkNow: { type: Type.BOOLEAN },
-            summary: { type: Type.STRING, description: "Short 3-5 word verdict." },
-            explanation: { type: Type.STRING, description: "Detailed explanation of permit usage or restriction reasons." },
-            rules: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Rules found on the sign." },
-            permitRequired: { type: Type.BOOLEAN },
-            permitApplied: { type: Type.STRING, nullable: true, description: "The name of the user permit that allowed this, or null if none used." },
-            nextStatusChange: { type: Type.STRING, description: "When the current rule expires." },
-            timeRemainingMinutes: { type: Type.NUMBER, description: "Minutes allowed." }
+            results: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  direction: { type: Type.STRING, enum: ["left", "right", "general"] },
+                  status: { type: Type.STRING, enum: ["ALLOWED", "FORBIDDEN", "RESTRICTED", "UNKNOWN"] },
+                  canParkNow: { type: Type.BOOLEAN },
+                  summary: { type: Type.STRING },
+                  explanation: { type: Type.STRING },
+                  rules: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  permitRequired: { type: Type.BOOLEAN },
+                  permitApplied: { type: Type.STRING, nullable: true },
+                  nextStatusChange: { type: Type.STRING },
+                  timeRemainingMinutes: { type: Type.NUMBER }
+                },
+                required: ["direction", "status", "canParkNow", "summary", "explanation", "rules", "permitRequired"]
+              }
+            }
           },
-          required: ["status", "canParkNow", "summary", "explanation", "rules", "permitRequired"]
+          required: ["results"]
         }
       }
     });
@@ -99,9 +109,9 @@ export const interpretParkingSign = async (
     if (!resultText) throw new Error("Empty AI response.");
     const parsed = JSON.parse(resultText);
     
-    // Ensure permitApplied isn't the literal string "null"
-    if (parsed.permitApplied === "null") {
-      parsed.permitApplied = null;
+    // Safety: ensure at least one result
+    if (!parsed.results || parsed.results.length === 0) {
+      throw new Error("AI failed to interpret directional results.");
     }
     
     return parsed as ParkingInterpretation;

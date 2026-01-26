@@ -13,7 +13,8 @@ export interface UserProfile {
   hasBusinessPermit: boolean;
 }
 
-export interface ParkingInterpretation {
+export interface DirectionalResult {
+  direction: 'left' | 'right' | 'general';
   status: ParkingStatus;
   canParkNow: boolean;
   explanation: string;
@@ -22,7 +23,11 @@ export interface ParkingInterpretation {
   permitRequired: boolean;
   permitApplied?: string; // Which user permit allowed this?
   timeRemainingMinutes?: number;
-  nextStatusChange?: string; 
+  nextStatusChange?: string;
+}
+
+export interface ParkingInterpretation {
+  results: DirectionalResult[];
 }
 
 export interface HistoryItem {

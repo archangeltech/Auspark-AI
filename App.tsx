@@ -234,7 +234,7 @@ const App: React.FC = () => {
                         className="w-24 aspect-[3/4] rounded-2xl overflow-hidden border-2 border-white shadow-lg active:scale-95 transition-all block"
                       >
                         <img src={item.image} className="w-full h-full object-cover" alt="History" />
-                        <div className={`absolute bottom-0 inset-x-0 h-1 ${item.interpretation.canParkNow ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <div className={`absolute bottom-0 inset-x-0 h-1 ${item.interpretation.results.some(r => r.canParkNow) ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         {item.feedback && (
                           <div className="absolute top-1 left-1 bg-white/90 backdrop-blur-sm rounded-md p-0.5 shadow-sm">
                             {item.feedback === 'up' ? (

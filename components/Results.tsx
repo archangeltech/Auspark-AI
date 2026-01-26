@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ParkingInterpretation } from '../types';
+import React, { useState } from 'react';
+import { ParkingInterpretation, DirectionalResult } from '../types';
 
 interface ResultsProps {
   data: ParkingInterpretation;
@@ -22,19 +22,47 @@ const Results: React.FC<ResultsProps> = ({
 }) => {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(initialFeedback || null);
   const [showThanks, setShowThanks] = useState(false);
-  const isAllowed = data.canParkNow;
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const activeResult: DirectionalResult = data.results[activeIdx] || data.results[0];
+  const isAllowed = activeResult.canParkNow;
 
   const handleFeedback = (type: 'up' | 'down') => {
     setFeedback(type);
     if (onFeedback) onFeedback(type);
     setShowThanks(true);
-    // Hide "thank you" after a few seconds
     setTimeout(() => setShowThanks(false), 3000);
   };
 
-  // Ensure "null" string or literal null shows as "No permits applied"
-  const hasValidPermit = data.permitApplied && data.permitApplied !== "null" && data.permitApplied.trim() !== "";
-  const permitDisplayText = hasValidPermit ? data.permitApplied : "No permits applied";
+  const formatDuration = (mins?: number) => {
+    if (mins === undefined || mins === null || mins <= 0) return null;
+    if (mins >= 1440) return "Unlimited";
+    
+    const hours = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    
+    if (hours > 0 && remainingMins > 0) {
+      return `${hours} hour ${remainingMins} mins`;
+    } else if (hours > 0) {
+      return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+    }
+    return `${remainingMins} mins`;
+  };
+
+  const formatRuleTag = (rule: string) => {
+    let formatted = rule.replace(/^1\/2P$/i, "30 mins");
+    formatted = formatted.replace(/^1\/4P$/i, "15 mins");
+    formatted = formatted.replace(/^(\d+)P$/i, "$1 hour");
+    formatted = formatted.replace(/(\d+)P/gi, (match, p1) => {
+        const val = parseInt(p1);
+        return `${val} ${val === 1 ? 'hour' : 'hours'}`;
+    });
+    return formatted;
+  };
+
+  const durationText = formatDuration(activeResult.timeRemainingMinutes);
+  const hasValidPermit = activeResult.permitApplied && activeResult.permitApplied !== "null" && activeResult.permitApplied.trim() !== "";
+  const permitDisplayText = hasValidPermit ? activeResult.permitApplied : "No permits applied";
 
   return (
     <div className="p-4 space-y-6 max-w-lg mx-auto pb-32 animate-fade-in">
@@ -61,7 +89,27 @@ const Results: React.FC<ResultsProps> = ({
         </div>
       </div>
 
-      <div className={`p-6 rounded-3xl border shadow-xl ${isAllowed ? 'bg-white border-emerald-100' : 'bg-white border-rose-100'}`}>
+      {data.results.length > 1 && (
+        <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex gap-1">
+          {data.results.map((res, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIdx(idx)}
+              className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                activeIdx === idx 
+                  ? 'bg-slate-900 text-white shadow-md' 
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {res.direction === 'left' && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>}
+              <span>{res.direction === 'general' ? 'Results' : `${res.direction} Side`}</span>
+              {res.direction === 'right' && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className={`p-6 rounded-3xl border shadow-xl transition-colors duration-300 ${isAllowed ? 'bg-white border-emerald-100' : 'bg-white border-rose-100'}`}>
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 ${isAllowed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
@@ -71,9 +119,9 @@ const Results: React.FC<ResultsProps> = ({
             <h2 className={`text-4xl font-black tracking-tight leading-none ${isAllowed ? 'text-emerald-900' : 'text-rose-900'}`}>
               {isAllowed ? 'GO AHEAD' : 'STOP'}
             </h2>
-            <p className="text-slate-500 font-medium mt-2">{data.summary}</p>
+            <p className="text-slate-500 font-medium mt-2">{activeResult.summary}</p>
           </div>
-          <div className={`p-4 rounded-2xl shadow-lg ${isAllowed ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-rose-500 text-white shadow-rose-200'}`}>
+          <div className={`p-4 rounded-2xl shadow-lg transition-colors ${isAllowed ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-rose-500 text-white shadow-rose-200'}`}>
              {isAllowed ? (
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
@@ -85,6 +133,22 @@ const Results: React.FC<ResultsProps> = ({
              )}
           </div>
         </div>
+
+        {isAllowed && durationText && (
+          <div className="mb-6 bg-emerald-50 border-2 border-emerald-500/20 rounded-2xl p-5 flex items-center gap-4 animate-fade-in shadow-sm">
+            <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Maximum Parking Duration</p>
+              <p className="text-xl font-bold text-slate-900 leading-tight">
+                Up to <span className="text-emerald-600 px-1 bg-emerald-100 rounded-md font-black">{durationText}</span> allowed here.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className={`${hasValidPermit ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'} border rounded-2xl p-4 mb-4 flex items-center gap-3 transition-colors`}>
           <div className={`${hasValidPermit ? 'bg-emerald-500' : 'bg-slate-200'} p-2 rounded-lg text-white transition-colors`}>
@@ -108,7 +172,7 @@ const Results: React.FC<ResultsProps> = ({
           </div>
         </div>
 
-        {data.nextStatusChange && (
+        {activeResult.nextStatusChange && (
           <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-amber-100 p-2 rounded-lg text-amber-600">
@@ -117,18 +181,28 @@ const Results: React.FC<ResultsProps> = ({
                 </svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valid Until</p>
-                <p className="text-sm font-bold text-slate-700">{data.nextStatusChange}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rule Changes At</p>
+                <p className="text-sm font-bold text-slate-700">{activeResult.nextStatusChange}</p>
               </div>
             </div>
           </div>
         )}
 
-        <p className="text-sm leading-relaxed text-slate-600 font-medium">
-          {data.explanation}
-        </p>
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-slate-600 font-medium">
+            {activeResult.explanation}
+          </p>
+          
+          <div className="flex flex-wrap gap-2">
+            {activeResult.rules.map((rule, idx) => (
+              <span key={idx} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-tight">
+                {formatRuleTag(rule)}
+              </span>
+            ))}
+          </div>
+        </div>
         
-        {data.permitRequired && !hasValidPermit && (
+        {activeResult.permitRequired && !hasValidPermit && (
           <div className="mt-4 bg-amber-50 text-amber-800 p-3 rounded-xl text-[11px] font-bold flex items-center gap-2 border border-amber-100">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
