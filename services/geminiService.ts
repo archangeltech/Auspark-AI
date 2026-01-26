@@ -8,11 +8,12 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
+  // Resolve API key safely from processed environment
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
     throw new Error(
-      "API Key is missing at runtime. Please: 1. Set API_KEY in Vercel. 2. Trigger a REDEPLOY in the Vercel 'Deployments' tab."
+      "API Key is missing. Please ensure API_KEY is set in your deployment environment variables."
     );
   }
 
@@ -33,39 +34,25 @@ export const interpretParkingSign = async (
   `;
 
   const prompt = `
-    You are an expert Australian Parking Sign Interpreter. Analyze the provided image of parking sign(s).
+    Analyze the provided image of Australian parking sign(s).
     
-    CRITICAL INSTRUCTION: Detect Arrows.
-    - If the sign has arrows pointing in different directions (e.g. Left is 1 hour, Right is No Stopping), you MUST return TWO results in the 'results' array: one for 'left' and one for 'right'.
-    - If there are no specific arrows, return a single result with direction 'general'.
+    CRITICAL: Detect Arrows.
+    - If arrows point in different directions, return results for 'left' and 'right'.
+    - Otherwise, return direction 'general'.
 
     CONTEXT:
-    - Current Time: ${currentTime}
-    - Current Day: ${userDay}
+    - Time: ${currentTime}
+    - Day: ${userDay}
     - ${locationContext}
     ${permitContext}
 
-    TERMINOLOGY PREFERENCE (MANDATORY):
-    - Do NOT use the "P" shorthand in the output (e.g., avoid "1P", "2P", "1/2P").
-    - ALWAYS use full words: "1 hour", "2 hours", "30 minutes" instead.
-    - This applies to 'summary', 'explanation', and 'rules'.
+    RULES:
+    - ALWAYS use full words for durations (e.g., "1 hour", "30 minutes"). Do NOT use "1P", "2P".
+    - Account for Disability (MPS) extensions: 1P -> 2 hours, 30min -> 2 hours.
+    - Resident permits bypass time limits in matching areas.
+    - Loading Zones require the loading zone permit.
 
-    AUSTRALIAN RULES KNOWLEDGE (REFINED):
-    1. DISABILITY (MPS) PERMIT RULES:
-       - Inside signed hours:
-         * Sign = 1 hour -> User gets 2 hours.
-         * Sign = 30 mins -> User gets 2 hours.
-         * Sign < 30 mins -> User gets 30 minutes.
-         * Sign > 1 hour -> User often gets Unlimited (NSW) or capped extension (VIC/QLD).
-       - Outside signed hours (e.g. if sign is 9:30am-7:30pm and it is now 8pm):
-         * In many Australian council zones (like Melbourne/Sydney), MPS holders are capped at 4 hours total in otherwise unrestricted zones.
-    2. RESIDENT PERMITS: Exempt from time limits if area matches.
-    3. LOADING ZONES: Allowed for user if 'hasLoadingZonePermit' is true.
-    4. CLEARWAYS / NO STOPPING: No permits allowed.
-
-    TASK:
-    - Return a JSON object with a 'results' array.
-    - Calculate 'timeRemainingMinutes' accurately including permit extensions.
+    Return JSON matching the schema.
   `;
 
   try {
@@ -95,8 +82,8 @@ export const interpretParkingSign = async (
                   rules: { type: Type.ARRAY, items: { type: Type.STRING } },
                   permitRequired: { type: Type.BOOLEAN },
                   permitApplied: { type: Type.STRING, nullable: true },
-                  nextStatusChange: { type: Type.STRING },
-                  timeRemainingMinutes: { type: Type.NUMBER }
+                  nextStatusChange: { type: Type.STRING, nullable: true },
+                  timeRemainingMinutes: { type: Type.NUMBER, nullable: true }
                 },
                 required: ["direction", "status", "canParkNow", "summary", "explanation", "rules", "permitRequired"]
               }
@@ -109,13 +96,7 @@ export const interpretParkingSign = async (
 
     const resultText = response.text?.trim();
     if (!resultText) throw new Error("Empty AI response.");
-    const parsed = JSON.parse(resultText);
-    
-    if (!parsed.results || parsed.results.length === 0) {
-      throw new Error("AI failed to interpret directional results.");
-    }
-    
-    return parsed as ParkingInterpretation;
+    return JSON.parse(resultText) as ParkingInterpretation;
   } catch (error: any) {
     console.error("Gemini Error:", error);
     throw error;
