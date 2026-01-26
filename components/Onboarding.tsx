@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
 
@@ -8,7 +7,8 @@ interface OnboardingProps {
 }
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) => {
-  const [step, setStep] = useState<1 | 2>(initialProfile ? 2 : 1);
+  // Step 1: Intro, Step 2: Privacy/Legal, Step 3: Permits
+  const [step, setStep] = useState<1 | 2 | 3>(initialProfile ? 3 : 1);
   const [profile, setProfile] = useState<UserProfile>(initialProfile || {
     hasDisabilityPermit: false,
     hasResidentPermit: false,
@@ -23,6 +23,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
     }
   };
 
+  // STEP 1: LANDING / INTRO
   if (step === 1) {
     return (
       <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in overflow-y-auto">
@@ -37,7 +38,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
           <div className="space-y-4">
             <h1 className="text-4xl font-black text-slate-900 leading-tight">AusPark AI</h1>
             <p className="text-slate-500 font-medium leading-relaxed">
-              Assisting Australian drivers in decoding complex parking restrictions.
+              Decoding Australian parking signs with advanced vision AI.
             </p>
           </div>
 
@@ -48,16 +49,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
                </div>
                <div>
                   <p className="font-bold text-slate-900 text-sm">Vision Engine</p>
-                  <p className="text-xs text-slate-500">Multimodal AI analyzes every panel in frame.</p>
-               </div>
-            </div>
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex items-start gap-4">
-               <div className="bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-               </div>
-               <div>
-                  <p className="font-bold text-slate-900 text-sm">Smart Exemptions</p>
-                  <p className="text-xs text-slate-500">Applies Disability & Resident permit rules automatically.</p>
+                  <p className="text-xs text-slate-500">Instant analysis of multiple restriction panels.</p>
                </div>
             </div>
           </div>
@@ -75,12 +67,66 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
     );
   }
 
+  // STEP 2: PRIVACY & TERMS
+  if (step === 2) {
+    return (
+      <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col max-w-md mx-auto w-full overflow-hidden">
+          <div className="mb-6">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Privacy & Terms</h2>
+            <p className="text-slate-500 font-medium mt-1">Please review our safety guidelines.</p>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-slate-600 leading-relaxed scrollbar-hide border-t border-slate-100 pt-6">
+            <section>
+              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Guidance Only</h3>
+              <p>AusPark AI is an assistive tool. AI can make mistakes. <strong>This is not a substitute for your own knowledge of Road Rules.</strong></p>
+            </section>
+
+            <section>
+              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Your Responsibility</h3>
+              <p>You are solely responsible for your vehicle. Verify all physical signs and markings. We are not liable for fines or towing costs.</p>
+            </section>
+
+            <section>
+              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Privacy</h3>
+              <p>Camera and location data are used temporarily to provide service. Images are processed in real-time and not stored permanently.</p>
+            </section>
+            
+            <section className="bg-amber-50 p-4 rounded-xl border border-amber-100">
+               <p className="text-amber-800 text-xs font-semibold">By continuing, you acknowledge that physical signs always take precedence over AI interpretation.</p>
+            </section>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <button 
+              onClick={() => setStep(3)}
+              className="w-full bg-emerald-600 text-white py-5 rounded-[24px] font-black shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <span>Accept & Continue</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+            <button 
+              onClick={() => setStep(1)}
+              className="w-full text-slate-400 font-bold text-xs py-4 uppercase tracking-widest"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STEP 3: PERMITS
   return (
     <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in max-w-md mx-auto">
       <div className="flex-1 space-y-8 overflow-y-auto pt-8 scrollbar-hide">
         <div className="space-y-2">
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Active Permits</h2>
-          <p className="text-slate-500 font-medium">Select any permits you hold. These grant you extra time or zone access in most AU states.</p>
+          <p className="text-slate-500 font-medium">Select permits you hold to apply state-specific exemptions.</p>
         </div>
 
         <div className="space-y-3">
@@ -130,13 +176,21 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
         </div>
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-8 space-y-4">
         <button 
           onClick={() => onComplete(profile)}
           className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all"
         >
           {initialProfile ? 'Save Changes' : 'Confirm & Finish'}
         </button>
+        {!initialProfile && (
+           <button 
+            onClick={() => setStep(2)}
+            className="w-full text-slate-400 font-bold text-xs py-2 uppercase tracking-widest"
+          >
+            Review Terms
+          </button>
+        )}
       </div>
     </div>
   );

@@ -61,7 +61,25 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const getFormattedDate = () => {
+    return new Date().toLocaleString('en-AU', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const saveProfile = (profile: UserProfile) => {
+    // If we're finishing onboarding for the first time, auto-accept legal
+    if (!localStorage.getItem(ONBOARDING_KEY)) {
+      const now = getFormattedDate();
+      localStorage.setItem(LEGAL_ACCEPTED_KEY, now);
+      setLastAcceptedDate(now);
+    }
+    
     localStorage.setItem(ONBOARDING_KEY, 'true');
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     setState(prev => ({ ...prev, profile }));
@@ -70,14 +88,7 @@ const App: React.FC = () => {
   };
 
   const handleAcceptLegal = () => {
-    const now = new Date().toLocaleString('en-AU', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
+    const now = getFormattedDate();
     localStorage.setItem(LEGAL_ACCEPTED_KEY, now);
     setLastAcceptedDate(now);
   };
