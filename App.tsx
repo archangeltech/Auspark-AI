@@ -73,7 +73,6 @@ const App: React.FC = () => {
   };
 
   const saveProfile = (profile: UserProfile) => {
-    // If we're finishing onboarding for the first time, auto-accept legal
     if (!localStorage.getItem(ONBOARDING_KEY)) {
       const now = getFormattedDate();
       localStorage.setItem(LEGAL_ACCEPTED_KEY, now);
@@ -104,21 +103,20 @@ const App: React.FC = () => {
     });
   };
 
-  const handleImageSelected = async (base64: string) => {
-    setState(prev => ({ ...prev, image: base64, isLoading: true, error: null, interpretation: null }));
-    
+  const performAnalysis = async (image: string) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
       const location = await getLocation();
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
       const dayStr = now.toLocaleDateString('en-AU', { weekday: 'long' });
 
-      const interpretation = await interpretParkingSign(base64, timeStr, dayStr, state.profile, location);
+      const interpretation = await interpretParkingSign(image, timeStr, dayStr, state.profile, location);
       
       const newHistoryItem: HistoryItem = {
         id: Date.now().toString(),
         timestamp: Date.now(),
-        image: base64,
+        image,
         interpretation,
       };
 
@@ -127,6 +125,7 @@ const App: React.FC = () => {
 
       setState(prev => ({
         ...prev,
+        image,
         interpretation,
         isLoading: false,
         history: updatedHistory
@@ -138,6 +137,33 @@ const App: React.FC = () => {
         error: err.message || "Network Error. Please check your connection and try again."
       }));
     }
+  };
+
+  const handleImageSelected = async (base64: string) => {
+    setState(prev => ({ ...prev, image: base64, interpretation: null }));
+    await performAnalysis(base64);
+  };
+
+  const handleRecheck = async () => {
+    if (state.image) {
+      await performAnalysis(state.image);
+    }
+  };
+
+  const handleFeedback = (type: 'up' | 'down') => {
+    // Update the most recent history item matching the current scan
+    if (!state.image) return;
+    
+    const updatedHistory = state.history.map(item => {
+      if (item.image === state.image) {
+        return { ...item, feedback: type };
+      }
+      return item;
+    });
+
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
+    setState(prev => ({ ...prev, history: updatedHistory }));
+    console.debug(`Collected user feedback: ${type} for image scan.`);
   };
 
   const deleteHistoryItem = (id: string, e: React.MouseEvent) => {
@@ -154,6 +180,9 @@ const App: React.FC = () => {
   if (showOnboarding || isEditingProfile) {
     return <Onboarding onComplete={saveProfile} initialProfile={isEditingProfile ? state.profile : undefined} />;
   }
+
+  // Determine if current result has existing feedback
+  const currentItem = state.history.find(h => h.image === state.image);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 safe-pb">
@@ -206,6 +235,15 @@ const App: React.FC = () => {
                       >
                         <img src={item.image} className="w-full h-full object-cover" alt="History" />
                         <div className={`absolute bottom-0 inset-x-0 h-1 ${item.interpretation.canParkNow ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        {item.feedback && (
+                          <div className="absolute top-1 left-1 bg-white/90 backdrop-blur-sm rounded-md p-0.5 shadow-sm">
+                            {item.feedback === 'up' ? (
+                               <svg className="w-2.5 h-2.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z" /></svg>
+                            ) : (
+                               <svg className="w-2.5 h-2.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.867a1.5 1.5 0 00.8-.2z" /></svg>
+                            )}
+                          </div>
+                        )}
                       </button>
                       <button 
                         onClick={(e) => deleteHistoryItem(item.id, e)}
@@ -229,7 +267,7 @@ const App: React.FC = () => {
               </div>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Reasoning...</h3>
               <p className="text-slate-500 mt-3 font-medium max-w-[240px] leading-relaxed">
-                Interpreting Australian traffic logic. Keep connection steady.
+                Interpreting Australian traffic logic for {new Date().toLocaleTimeString('en-AU', {hour: '2-digit', minute:'2-digit'})}.
               </p>
            </div>
         ) : state.error ? (
@@ -249,7 +287,15 @@ const App: React.FC = () => {
             </button>
           </div>
         ) : state.interpretation && state.image ? (
-          <Results data={state.interpretation} image={state.image} onReset={handleReset} />
+          <Results 
+            data={state.interpretation} 
+            image={state.image} 
+            onReset={handleReset} 
+            onRecheck={handleRecheck}
+            onFeedback={handleFeedback}
+            isRechecking={state.isLoading}
+            initialFeedback={currentItem?.feedback}
+          />
         ) : null}
       </main>
 

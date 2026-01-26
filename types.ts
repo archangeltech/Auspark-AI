@@ -1,4 +1,3 @@
-
 export enum ParkingStatus {
   ALLOWED = 'ALLOWED',
   FORBIDDEN = 'FORBIDDEN',
@@ -31,6 +30,7 @@ export interface HistoryItem {
   timestamp: number;
   image: string;
   interpretation: ParkingInterpretation;
+  feedback?: 'up' | 'down';
 }
 
 export interface AppState {
