@@ -30,6 +30,7 @@ const App: React.FC = () => {
       hasResidentPermit: false,
       hasLoadingZonePermit: false,
       hasBusinessPermit: false,
+      residentArea: '',
     }
   });
 
@@ -189,6 +190,7 @@ const App: React.FC = () => {
         onOpenLegal={() => setShowLegal(true)} 
         onEditProfile={() => setIsEditingProfile(true)}
         onOpenSettings={() => setShowSettings(true)}
+        onLogoClick={handleReset}
       />
       
       <main className="flex-1 overflow-y-auto scrollbar-hide">

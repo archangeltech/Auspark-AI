@@ -7,14 +7,13 @@ interface OnboardingProps {
 }
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) => {
-  // Step 1: Intro/Value Prop, Step 2: Privacy/Legal, Step 3: Permits
   const [step, setStep] = useState<1 | 2 | 3>(initialProfile ? 3 : 1);
   const [profile, setProfile] = useState<UserProfile>(initialProfile || {
     hasDisabilityPermit: false,
     hasResidentPermit: false,
-    residentArea: '',
     hasLoadingZonePermit: false,
     hasBusinessPermit: false,
+    residentArea: '',
   });
 
   const togglePermit = (key: keyof UserProfile) => {
@@ -23,7 +22,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
     }
   };
 
-  // STEP 1: LANDING / VALUE PROP
   if (step === 1) {
     return (
       <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in overflow-y-auto scrollbar-hide">
@@ -62,12 +60,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
                </div>
                <p className="font-bold text-slate-800 text-sm">State-Specific Logic</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
-               <div className="bg-white p-2 rounded-xl shadow-sm shrink-0">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-               </div>
-               <p className="font-bold text-slate-800 text-sm">Permit-Aware Feedback</p>
-            </div>
           </div>
         </div>
 
@@ -78,15 +70,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
           >
             Start Setup
           </button>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-            Takes less than 30 seconds
-          </p>
         </div>
       </div>
     );
   }
 
-  // STEP 2: PRIVACY & TERMS (Identical content to LegalModal)
   if (step === 2) {
     return (
       <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in overflow-hidden">
@@ -109,36 +97,29 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
 
             <section>
               <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Connectivity & Availability</h3>
-              <p>This service requires a stable internet connection to process data through our AI engines. Performance depends on your device network being steady. We do not guarantee 100% uptime.</p>
+              <p>This service <strong>requires a stable internet connection</strong> to process data through our AI engines. Performance depends on your device network being steady. We do not guarantee 100% uptime; the service may be occasionally unavailable due to maintenance or technical issues.</p>
             </section>
 
             <section>
               <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Privacy & Data Handling</h3>
-              <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time and are not stored permanently by AusPark AI.</p>
+              <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time via Google Gemini and are not stored permanently by AusPark AI. We do not track individuals or sell personal data to third parties.</p>
             </section>
-            
-            <section className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-               <p className="text-amber-800 text-[11px] font-black leading-tight italic">
-                 By continuing, you acknowledge that physical signs always take precedence over AI interpretation.
-               </p>
+
+            <section>
+              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Compliance</h3>
+              <p>Designed for compliance with general Australian parking standards across all states (NSW, VIC, QLD, WA, SA, TAS, ACT, NT).</p>
             </section>
           </div>
 
           <div className="mt-8 pt-6 border-t border-slate-100">
             <button 
               onClick={() => setStep(3)}
-              className="w-full bg-emerald-600 text-white py-5 rounded-[24px] font-black shadow-xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg"
+              className="w-full bg-emerald-600 text-white py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-lg"
             >
               <span>Accept & Continue</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </button>
-            <button 
-              onClick={() => setStep(1)}
-              className="w-full text-slate-400 font-bold text-[10px] py-4 uppercase tracking-widest"
-            >
-              Go Back
             </button>
           </div>
         </div>
@@ -146,79 +127,68 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
     );
   }
 
-  // STEP 3: PERMITS
   return (
-    <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in max-w-md mx-auto overflow-y-auto scrollbar-hide">
-      <div className="flex-1 space-y-8 pt-8">
-        <div className="space-y-2">
+    <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in max-w-md mx-auto overflow-hidden">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide pt-4">
+        <div className="space-y-2 mb-8">
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Active Permits</h2>
-          <p className="text-slate-500 font-medium">Select permits you hold to apply state-specific exemptions like time extensions.</p>
+          <p className="text-slate-500 font-medium">Select your current parking permits.</p>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3">
           {[
-            { id: 'hasDisabilityPermit', label: 'MPS / Disability', icon: '♿' },
+            { id: 'hasDisabilityPermit', label: 'Disability Permit (MPS)', icon: '♿' },
             { id: 'hasResidentPermit', label: 'Resident Permit', icon: '🏠' },
-            { id: 'hasLoadingZonePermit', label: 'Loading Zone', icon: '📦' },
+            { id: 'hasLoadingZonePermit', label: 'Loading Zone Permit', icon: '🚛' },
             { id: 'hasBusinessPermit', label: 'Business Permit', icon: '💼' },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => togglePermit(item.id as keyof UserProfile)}
-              className={`w-full p-5 rounded-2xl border-2 transition-all flex items-center justify-between text-left ${
+              className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 text-left ${
                 profile[item.id as keyof UserProfile] 
-                  ? 'border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-100' 
-                  : 'border-slate-100 bg-slate-50 grayscale opacity-60 hover:opacity-100'
+                  ? 'border-emerald-500 bg-emerald-50 shadow-sm' 
+                  : 'border-slate-100 bg-slate-50/50'
               }`}
             >
-              <div className="flex items-center gap-4">
-                <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm">
-                  {item.icon}
-                </div>
-                <span className="font-black text-slate-900">{item.label}</span>
-              </div>
-              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                profile[item.id as keyof UserProfile] ? 'bg-emerald-500 border-emerald-500 scale-110' : 'border-slate-300'
-              }`}>
-                {profile[item.id as keyof UserProfile] && (
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                  </svg>
+              <span className="text-2xl">{item.icon}</span>
+              <span className="font-bold text-slate-900">{item.label}</span>
+              <div className="ml-auto">
+                {profile[item.id as keyof UserProfile] ? (
+                  <div className="bg-emerald-500 rounded-full p-1">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-full border-2 border-slate-200" />
                 )}
               </div>
             </button>
           ))}
-
-          {profile.hasResidentPermit && (
-            <div className="mt-4 animate-fade-in">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-2 mb-2 block">Permit Area / Zone</label>
-              <input 
-                type="text"
-                placeholder="e.g. Area 15 / North Sydney"
-                value={profile.residentArea}
-                onChange={(e) => setProfile(prev => ({ ...prev, residentArea: e.target.value }))}
-                className="w-full p-5 rounded-2xl border-2 border-slate-100 bg-white focus:border-emerald-500 focus:ring-0 outline-none transition-all font-bold text-slate-900 placeholder:text-slate-300"
-              />
-            </div>
-          )}
         </div>
+
+        {profile.hasResidentPermit && (
+          <div className="mt-6 animate-fade-in">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Resident Area / Zone</label>
+            <input 
+              type="text"
+              placeholder="e.g. Area 15"
+              value={profile.residentArea}
+              onChange={(e) => setProfile(prev => ({ ...prev, residentArea: e.target.value }))}
+              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
+            />
+          </div>
+        )}
       </div>
 
-      <div className="mt-10 space-y-4 pb-8">
+      <div className="mt-6 pt-4 border-t border-slate-100 shrink-0">
         <button 
           onClick={() => onComplete(profile)}
           className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg"
         >
           {initialProfile ? 'Save Changes' : 'Complete Setup'}
         </button>
-        {!initialProfile && (
-           <button 
-            onClick={() => setStep(2)}
-            className="w-full text-slate-400 font-bold text-[10px] py-2 uppercase tracking-widest text-center"
-          >
-            Review Terms Again
-          </button>
-        )}
       </div>
     </div>
   );

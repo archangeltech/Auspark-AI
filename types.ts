@@ -8,9 +8,9 @@ export enum ParkingStatus {
 export interface UserProfile {
   hasDisabilityPermit: boolean;
   hasResidentPermit: boolean;
-  residentArea?: string;
   hasLoadingZonePermit: boolean;
   hasBusinessPermit: boolean;
+  residentArea?: string;
 }
 
 export interface DirectionalResult {
@@ -21,7 +21,7 @@ export interface DirectionalResult {
   summary: string;
   rules: string[];
   permitRequired: boolean;
-  permitApplied?: string; // Which user permit allowed this?
+  permitApplied?: string;
   timeRemainingMinutes?: number;
   nextStatusChange?: string;
 }

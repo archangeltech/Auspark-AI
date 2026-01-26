@@ -4,12 +4,17 @@ interface HeaderProps {
   onOpenLegal: () => void;
   onEditProfile: () => void;
   onOpenSettings: () => void;
+  onLogoClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSettings }) => {
+const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSettings, onLogoClick }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-5 py-3.5 flex items-center justify-between">
-      <div className="flex items-center gap-2.5" aria-label="AusPark AI Home">
+      <button 
+        onClick={onLogoClick}
+        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none" 
+        aria-label="AusPark AI Home - Return to Scan"
+      >
         <div className="bg-emerald-500 p-1.5 rounded-xl shadow-sm">
           <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -17,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSetti
           </svg>
         </div>
         <h1 className="text-lg font-black tracking-tight text-slate-900 leading-none">AusPark <span className="text-emerald-500">AI</span></h1>
-      </div>
+      </button>
       
       <div className="flex items-center gap-1">
         <button 

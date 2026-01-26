@@ -8,7 +8,6 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  // Resolve API key safely from processed environment
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
@@ -27,7 +26,7 @@ export const interpretParkingSign = async (
 
   const permitContext = `
     USER PERMITS (EXEMPTIONS):
-    - Disability/MPS Permit: ${profile.hasDisabilityPermit}
+    - Disability Permit (MPS/ADP): ${profile.hasDisabilityPermit}
     - Resident Permit: ${profile.hasResidentPermit} (Area: ${profile.residentArea || 'N/A'})
     - Loading Zone Permit: ${profile.hasLoadingZonePermit}
     - Business Permit: ${profile.hasBusinessPermit}
@@ -36,9 +35,7 @@ export const interpretParkingSign = async (
   const prompt = `
     Analyze the provided image of Australian parking sign(s).
     
-    CRITICAL: Detect Arrows.
-    - If arrows point in different directions, return results for 'left' and 'right'.
-    - Otherwise, return direction 'general'.
+    CRITICAL: Detect Arrows for Left and Right sides.
 
     CONTEXT:
     - Time: ${currentTime}
@@ -46,13 +43,13 @@ export const interpretParkingSign = async (
     - ${locationContext}
     ${permitContext}
 
-    RULES:
-    - ALWAYS use full words for durations (e.g., "1 hour", "30 minutes"). Do NOT use "1P", "2P".
-    - Account for Disability (MPS) extensions: 1P -> 2 hours, 30min -> 2 hours.
-    - Resident permits bypass time limits in matching areas.
-    - Loading Zones require the loading zone permit.
+    AUSTRALIAN PARKING RULES TO APPLY:
+    1. Disability Permits: 1P -> 2H, 1/2P -> 2H. Often allow double time in green-sign time-limited bays.
+    2. Resident Permits: Exempt from 'Permit Zone' and time limits in matching 'Area' zones.
+    3. Loading Zones: Require appropriate commercial or loading zone permits.
+    4. Business Permits: Often allow parking in specific trader or business zones.
 
-    Return JSON matching the schema.
+    Return JSON with interpretation results for each direction.
   `;
 
   try {
