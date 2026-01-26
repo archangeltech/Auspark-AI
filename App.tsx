@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
-import Scanner from './components/Scanner';
-import Results from './components/Results';
-import Onboarding from './components/Onboarding';
-import LegalModal from './components/LegalModal';
-import AppSettingsModal from './components/AppSettingsModal';
-import { AppState, HistoryItem, UserProfile } from './types';
-import { interpretParkingSign } from './services/geminiService';
+import Header from './components/Header.tsx';
+import Scanner from './components/Scanner.tsx';
+import Results from './components/Results.tsx';
+import Onboarding from './components/Onboarding.tsx';
+import LegalModal from './components/LegalModal.tsx';
+import AppSettingsModal from './components/AppSettingsModal.tsx';
+import { AppState, HistoryItem, UserProfile } from './types.ts';
+import { interpretParkingSign } from './services/geminiService.ts';
 
 const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';

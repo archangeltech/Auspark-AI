@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ParkingInterpretation, UserProfile } from "../types";
+import { ParkingInterpretation, UserProfile } from "../types.ts";
 
 export const interpretParkingSign = async (
   base64Image: string,
@@ -45,9 +45,10 @@ export const interpretParkingSign = async (
     - ${locationContext}
     ${permitContext}
 
-    TERMINOLOGY PREFERENCE (CRITICAL):
+    TERMINOLOGY PREFERENCE (MANDATORY):
     - Do NOT use the "P" shorthand in the output (e.g., avoid "1P", "2P", "1/2P").
     - ALWAYS use full words: "1 hour", "2 hours", "30 minutes" instead.
+    - This applies to 'summary', 'explanation', and 'rules'.
 
     AUSTRALIAN RULES KNOWLEDGE (REFINED):
     1. DISABILITY (MPS) PERMIT RULES:
