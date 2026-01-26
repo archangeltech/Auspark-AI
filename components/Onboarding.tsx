@@ -25,40 +25,71 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
   if (step === 1) {
     return (
       <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in overflow-y-auto scrollbar-hide">
-        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-10 max-w-sm mx-auto py-10">
-          <div className="relative">
-            <div className="w-24 h-24 bg-emerald-500 rounded-[32px] flex items-center justify-center shadow-2xl shadow-emerald-200 animate-pulse">
-               <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex-1 flex flex-col items-center max-w-sm mx-auto py-10">
+          <div className="relative mb-8">
+            <div className="w-20 h-20 bg-emerald-500 rounded-[28px] flex items-center justify-center shadow-2xl shadow-emerald-200">
+               <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                </svg>
             </div>
-            <div className="absolute -top-2 -right-2 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-tighter">
-              AI Powered
+            <div className="absolute -top-2 -right-4 bg-slate-900 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter shadow-lg">
+              AU Smart App
             </div>
           </div>
           
-          <div className="space-y-4">
-            <h1 className="text-[40px] font-black text-slate-900 leading-[0.9] tracking-tight">
-              Australian Parking, <span className="text-emerald-500">Simplified.</span>
+          <div className="space-y-4 text-center mb-10">
+            <h1 className="text-[38px] font-black text-slate-900 leading-[0.9] tracking-tight">
+              Parking Logic, <span className="text-emerald-500 text-[42px]">Solved.</span>
             </h1>
-            <p className="text-slate-500 font-medium leading-relaxed px-2">
-              Instantly decode complex multi-panel parking signs with high-precision vision AI. Built specifically for Australian road rules.
+            <p className="text-slate-500 font-medium leading-relaxed px-4 text-sm">
+              Decode complex Australian parking signs in seconds using high-precision Vision AI.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 w-full text-left">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
-               <div className="bg-white p-2 rounded-xl shadow-sm shrink-0">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-               </div>
-               <p className="font-bold text-slate-800 text-sm">Vision-First Interpretation</p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
-               <div className="bg-white p-2 rounded-xl shadow-sm shrink-0">
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-               </div>
-               <p className="font-bold text-slate-800 text-sm">State-Specific Logic</p>
+          <div className="w-full space-y-4">
+            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 mb-4">How it works</h2>
+            
+            <div className="grid grid-cols-1 gap-3 w-full">
+              <div className="bg-slate-50 p-4 rounded-[24px] border border-slate-100 flex items-center gap-4 group hover:border-emerald-200 transition-colors">
+                 <div className="bg-white p-3 rounded-2xl shadow-sm shrink-0 text-emerald-500">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 1</span>
+                   <p className="font-bold text-slate-800 text-sm leading-tight">Take a photo of a sign</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-[24px] border border-slate-100 flex items-center gap-4 group hover:border-emerald-200 transition-colors">
+                 <div className="bg-white p-3 rounded-2xl shadow-sm shrink-0 text-emerald-500">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 2</span>
+                   <p className="font-bold text-slate-800 text-sm leading-tight">Upload to the app</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-[24px] border border-slate-100 flex items-center gap-4 group hover:border-emerald-200 transition-colors">
+                 <div className="bg-white p-3 rounded-2xl shadow-sm shrink-0 text-emerald-500">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 3</span>
+                   <p className="font-bold text-slate-800 text-sm leading-tight">Get an instant answer</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-[24px] border border-slate-100 flex items-center gap-4 group hover:border-emerald-200 transition-colors">
+                 <div className="bg-white p-3 rounded-2xl shadow-sm shrink-0 text-emerald-500">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 4</span>
+                   <p className="font-bold text-slate-800 text-sm leading-tight">Add permits for accuracy</p>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
@@ -68,7 +99,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
             onClick={() => setStep(2)}
             className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg"
           >
-            Start Setup
+            Get Started
           </button>
         </div>
       </div>
