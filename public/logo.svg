@@ -1,0 +1,10 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- App Store standard squircle background -->
+  <rect width="1024" height="1024" rx="224" fill="#10B981"/>
+  
+  <!-- Location Pin Icon -->
+  <path d="M753.365 710.693L572.333 891.725C538.995 925.063 485.005 925.063 451.667 891.725L270.635 710.693C184.661 624.719 184.661 485.281 270.635 399.307C356.609 313.333 496.047 313.333 582.021 399.307C667.995 485.281 667.995 624.719 753.365 710.693Z" fill="white"/>
+  
+  <!-- Inner Circle (Emerald punch-through) -->
+  <circle cx="512" cy="469.333" r="128" fill="#10B981"/>
+</svg>
