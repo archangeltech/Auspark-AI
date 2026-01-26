@@ -1,6 +1,6 @@
 {
   "name": "AusPark AI",
-  "description": "An AI-powered parking sign interpreter specifically designed for the complex parking signs of Australia. Upload a photo to instantly know if you can park now.",
+  "description": "Instantly decode complex Australian parking signs with AI. Snap a photo and know if you can park now. Support for all Australian states and parking permits.",
   "requestFramePermissions": [
     "camera",
     "geolocation"

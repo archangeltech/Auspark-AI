@@ -4,6 +4,7 @@ import Scanner from './components/Scanner';
 import Results from './components/Results';
 import Onboarding from './components/Onboarding';
 import LegalModal from './components/LegalModal';
+import AppSettingsModal from './components/AppSettingsModal';
 import { AppState, HistoryItem, UserProfile } from './types';
 import { interpretParkingSign } from './services/geminiService';
 
@@ -15,6 +16,7 @@ const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
 const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [showLegal, setShowLegal] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [lastAcceptedDate, setLastAcceptedDate] = useState<string | null>(null);
   const [state, setState] = useState<AppState>({
@@ -151,7 +153,6 @@ const App: React.FC = () => {
   };
 
   const handleFeedback = (type: 'up' | 'down') => {
-    // Update the most recent history item matching the current scan
     if (!state.image) return;
     
     const updatedHistory = state.history.map(item => {
@@ -163,7 +164,6 @@ const App: React.FC = () => {
 
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
     setState(prev => ({ ...prev, history: updatedHistory }));
-    console.debug(`Collected user feedback: ${type} for image scan.`);
   };
 
   const deleteHistoryItem = (id: string, e: React.MouseEvent) => {
@@ -181,7 +181,6 @@ const App: React.FC = () => {
     return <Onboarding onComplete={saveProfile} initialProfile={isEditingProfile ? state.profile : undefined} />;
   }
 
-  // Determine if current result has existing feedback
   const currentItem = state.history.find(h => h.image === state.image);
 
   return (
@@ -189,6 +188,7 @@ const App: React.FC = () => {
       <Header 
         onOpenLegal={() => setShowLegal(true)} 
         onEditProfile={() => setIsEditingProfile(true)}
+        onOpenSettings={() => setShowSettings(true)}
       />
       
       <main className="flex-1 overflow-y-auto scrollbar-hide">
@@ -303,7 +303,7 @@ const App: React.FC = () => {
         <footer className="px-8 py-10 bg-white border-t border-slate-100 text-center pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
              <div className="flex items-center justify-center gap-4 mb-4">
                 <div className="h-px bg-slate-100 flex-1" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">AusPark AI v1.2</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">AusPark AI v1.2.1</span>
                 <div className="h-px bg-slate-100 flex-1" />
              </div>
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
@@ -332,6 +332,11 @@ const App: React.FC = () => {
         onClose={() => setShowLegal(false)} 
         lastAcceptedDate={lastAcceptedDate}
         onAccept={handleAcceptLegal}
+      />
+
+      <AppSettingsModal 
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
       />
     </div>
   );

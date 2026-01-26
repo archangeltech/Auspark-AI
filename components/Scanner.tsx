@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 
 interface ScannerProps {
@@ -26,7 +25,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
 
   return (
     <div className="flex flex-col items-center gap-6 p-6">
-      <div className="w-full max-w-sm aspect-[3/4] rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100 flex flex-col items-center justify-center text-center p-8 transition-colors hover:border-amber-400">
+      <div className="w-full max-w-sm aspect-[3/4] rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100 flex flex-col items-center justify-center text-center p-8 transition-colors hover:border-emerald-400">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
           <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -34,7 +33,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-slate-900">Scan Parking Sign</h3>
-        <p className="text-sm text-slate-500 mt-2">Take a photo or choose a clear image from your gallery.</p>
+        <p className="text-sm text-slate-500 mt-2">Use your camera for a live photo or select a sign from your gallery.</p>
         
         <button
           onClick={triggerUpload}
@@ -52,9 +51,10 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
           ) : (
             <>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span>Take Photo / Upload</span>
+              <span>Camera or Gallery</span>
             </>
           )}
         </button>
