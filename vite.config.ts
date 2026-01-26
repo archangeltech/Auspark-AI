@@ -3,13 +3,13 @@ import react from '@vitejs/plugin-react';
 import process from 'process';
 
 export default defineConfig(({ mode }) => {
-  // Load all environment variables (including those without VITE_ prefix)
-  // process.cwd() is used here to get the project root for .env loading
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env vars regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
   
-  // Vercel sets the variables in the environment during build.
-  // We prioritize the loaded env, then fall back to process.env.
-  const apiKey = env.API_KEY || process.env.API_KEY || '';
+  // Vercel sets variables in its environment. We prioritize those, 
+  // then the ones loaded from .env files.
+  const apiKey = process.env.API_KEY || env.API_KEY || '';
 
   return {
     plugins: [react()],
@@ -26,6 +26,9 @@ export default defineConfig(({ mode }) => {
           }
         }
       }
+    },
+    server: {
+      port: 8080
     }
   };
 });

@@ -9,8 +9,17 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  // Always initialize with the environment variable directly as per guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // The value of process.env.API_KEY is injected at BUILD TIME by Vite.
+  // If this is empty, it means the API_KEY was not set in Vercel/Environment during the build.
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
+    throw new Error(
+      "API Key is missing. Please: 1. Ensure 'API_KEY' is set in Vercel Environment Variables. 2. Redeploy the project to trigger a new build with the key."
+    );
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const base64Data = base64Image.split(',')[1] || base64Image;
 
@@ -55,7 +64,6 @@ export const interpretParkingSign = async (
         ]
       },
       config: {
-        // Letting the model manage reasoning tokens for better accuracy
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -75,7 +83,6 @@ export const interpretParkingSign = async (
       }
     });
 
-    // Access the .text property directly (not a method)
     const resultText = response.text?.trim();
     if (!resultText) throw new Error("AI response was empty.");
     return JSON.parse(resultText) as ParkingInterpretation;
