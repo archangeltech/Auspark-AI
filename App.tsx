@@ -35,32 +35,33 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
-    if (!onboardingDone) {
-      setShowOnboarding(true);
-    }
+    try {
+      const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
+      if (!onboardingDone) {
+        setShowOnboarding(true);
+      }
 
-    const savedProfile = localStorage.getItem(PROFILE_KEY);
-    if (savedProfile) {
-      try {
+      const savedProfile = localStorage.getItem(PROFILE_KEY);
+      if (savedProfile) {
         setState(prev => ({ ...prev, profile: JSON.parse(savedProfile) }));
-      } catch (e) {
-        console.error("Failed to load profile");
       }
-    }
 
-    const savedHistory = localStorage.getItem(HISTORY_KEY);
-    if (savedHistory) {
-      try {
-        setState(prev => ({ ...prev, history: JSON.parse(savedHistory) }));
-      } catch (e) {
-        console.error("Failed to load history");
+      const savedHistory = localStorage.getItem(HISTORY_KEY);
+      if (savedHistory) {
+        const parsed = JSON.parse(savedHistory);
+        // Basic validation to ensure history is an array
+        if (Array.isArray(parsed)) {
+          setState(prev => ({ ...prev, history: parsed }));
+        }
       }
-    }
 
-    const savedLegal = localStorage.getItem(LEGAL_ACCEPTED_KEY);
-    if (savedLegal) {
-      setLastAcceptedDate(savedLegal);
+      const savedLegal = localStorage.getItem(LEGAL_ACCEPTED_KEY);
+      if (savedLegal) {
+        setLastAcceptedDate(savedLegal);
+      }
+    } catch (e) {
+      console.warn("Storage recovery: Resetting corrupted local data.");
+      localStorage.clear();
     }
   }, []);
 
@@ -185,7 +186,7 @@ const App: React.FC = () => {
   const currentItem = state.history.find(h => h.image === state.image);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 safe-pb">
+    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 safe-pb overflow-x-hidden">
       <Header 
         onOpenLegal={() => setShowLegal(true)} 
         onEditProfile={() => setIsEditingProfile(true)}
@@ -236,7 +237,7 @@ const App: React.FC = () => {
                         className="w-24 aspect-[3/4] rounded-2xl overflow-hidden border-2 border-white shadow-lg active:scale-95 transition-all block"
                       >
                         <img src={item.image} className="w-full h-full object-cover" alt="History" />
-                        <div className={`absolute bottom-0 inset-x-0 h-1 ${item.interpretation.results.some(r => r.canParkNow) ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <div className={`absolute bottom-0 inset-x-0 h-1 ${item.interpretation?.results?.some?.(r => r.canParkNow) ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         {item.feedback && (
                           <div className="absolute top-1 left-1 bg-white/90 backdrop-blur-sm rounded-md p-0.5 shadow-sm">
                             {item.feedback === 'up' ? (
@@ -305,7 +306,7 @@ const App: React.FC = () => {
         <footer className="px-8 py-10 bg-white border-t border-slate-100 text-center pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
              <div className="flex items-center justify-center gap-4 mb-4">
                 <div className="h-px bg-slate-100 flex-1" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">AusPark AI v1.2.1</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">AusPark AI v1.2.2</span>
                 <div className="h-px bg-slate-100 flex-1" />
              </div>
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
