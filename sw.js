@@ -1,4 +1,4 @@
-const CACHE_NAME = 'auspark-v1.3';
+const CACHE_NAME = 'auspark-v1.4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -14,7 +14,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Passive fetch to prevent caching issues during dev/testing
 self.addEventListener('fetch', (event) => {
-  // Simple pass-through for now to ensure reliability on mobile
   return;
 });

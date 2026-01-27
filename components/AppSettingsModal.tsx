@@ -17,6 +17,41 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
     }
   };
 
+  const handleHardReset = async () => {
+    const confirmed = window.confirm(
+      "HARD RESET:\n\nThis will delete all your permits, history, and app data, and unregister the service worker. This usually fixes loading issues. \n\nContinue?"
+    );
+
+    if (confirmed) {
+      try {
+        // 1. Clear LocalStorage
+        localStorage.clear();
+
+        // 2. Unregister Service Workers
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+          }
+        }
+
+        // 3. Clear Caches
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          for (const name of cacheNames) {
+            await caches.delete(name);
+          }
+        }
+
+        // 4. Reload the page
+        window.location.reload();
+      } catch (error) {
+        console.error("Reset failed:", error);
+        alert("Reset failed. Please manually clear your browser data for this site.");
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] grid place-items-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
@@ -31,7 +66,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
           </button>
         </div>
         
-        <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
+        <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh] scrollbar-hide">
           <div className="space-y-4">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Device Permissions</h3>
             
@@ -63,20 +98,16 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">How to Enable</h3>
-            <div className="text-sm text-slate-600 space-y-3">
-              <p className="flex items-center gap-2">
-                <span className="w-5 h-5 flex items-center justify-center bg-slate-900 text-white rounded-full text-[10px] font-bold">1</span>
-                Open your device <strong>Settings</strong>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="w-5 h-5 flex items-center justify-center bg-slate-900 text-white rounded-full text-[10px] font-bold">2</span>
-                Find <strong>Privacy</strong> or your <strong>Browser</strong>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="w-5 h-5 flex items-center justify-center bg-slate-900 text-white rounded-full text-[10px] font-bold">3</span>
-                Select <strong>AusPark AI</strong> and allow Camera
-              </p>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Maintenance</h3>
+            <div className="bg-rose-50 p-5 rounded-2xl border border-rose-100">
+              <p className="text-xs text-rose-700 font-bold mb-3">App not loading correctly?</p>
+              <p className="text-[11px] text-rose-600 mb-4 leading-relaxed">If the app works in Incognito but not here, a hard reset will clear the browser's internal cache for this site.</p>
+              <button 
+                onClick={handleHardReset}
+                className="w-full bg-rose-600 text-white py-3 rounded-xl font-black text-sm shadow-md active:scale-[0.98] transition-all"
+              >
+                Clear Cache & Hard Reset
+              </button>
             </div>
           </div>
 
