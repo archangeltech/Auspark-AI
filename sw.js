@@ -1,5 +1,4 @@
-const CACHE_NAME = 'auspark-v1.4';
-
+// Passive Service Worker v1.5 - Fixes 'Incognito Only' issues by disabling caching
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -10,11 +9,15 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => caches.delete(key))
       );
+    }).then(() => {
+      // Clear any remaining site data if supported
+      return self.clients.claim();
     })
   );
 });
 
-// Passive fetch to prevent caching issues during dev/testing
+// Explicitly NOT intercepting fetch requests ensures the browser
+// always pulls fresh content from the server in normal mode.
 self.addEventListener('fetch', (event) => {
   return;
 });
