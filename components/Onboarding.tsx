@@ -27,13 +27,15 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
       <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in overflow-y-auto scrollbar-hide">
         <div className="flex-1 flex flex-col items-center max-w-sm mx-auto py-10">
           <div className="relative mb-8">
-            <div className="w-20 h-20 bg-emerald-500 rounded-[28px] flex items-center justify-center shadow-2xl shadow-emerald-200">
-               <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            <div className="w-24 h-24 flex items-center justify-center filter drop-shadow-xl">
+               <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" stroke-width="4"/>
+                  <circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" stroke-width="4"/>
+                  <circle cx="50" cy="35" r="20" fill="#A7F3D0" stroke="black" stroke-width="4"/>
+                  <text x="50" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="black">P</text>
                </svg>
             </div>
-            <div className="absolute -top-2 -right-4 bg-slate-900 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter shadow-lg">
+            <div className="absolute -top-2 -right-6 bg-slate-900 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter shadow-lg">
               AU Smart App
             </div>
           </div>

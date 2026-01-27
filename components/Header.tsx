@@ -15,10 +15,12 @@ const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSetti
         className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none" 
         aria-label="AusPark AI Home - Return to Scan"
       >
-        <div className="bg-emerald-500 p-1.5 rounded-xl shadow-sm">
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div className="shrink-0">
+          <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" stroke-width="4"/>
+            <circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" stroke-width="4"/>
+            <circle cx="50" cy="35" r="20" fill="#A7F3D0" stroke="black" stroke-width="4"/>
+            <text x="50" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="black">P</text>
           </svg>
         </div>
         <h1 className="text-lg font-black tracking-tight text-slate-900 leading-none">AusPark <span className="text-emerald-500">AI</span></h1>

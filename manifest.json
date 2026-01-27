@@ -5,14 +5,14 @@
   "categories": ["utilities", "navigation", "travel"],
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2990/2990924.png",
-      "type": "image/png",
-      "sizes": "192x192",
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2990/2990924.png",
-      "type": "image/png",
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
@@ -23,7 +23,7 @@
       "short_name": "Scan",
       "description": "Instantly scan a new parking sign",
       "url": "/",
-      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/2990/2990924.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/logo.svg", "sizes": "192x192" }]
     }
   ],
   "start_url": ".",
