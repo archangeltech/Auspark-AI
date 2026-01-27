@@ -12,7 +12,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v2';
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.2.4';
+const APP_VERSION = '1.2.5';
 
 const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
@@ -231,9 +231,9 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-1 px-1">
                   {(state.history || []).filter(Boolean).map((item) => {
-                    // ULTRA-DEFENSIVE: Ensure we don't crash on undefined results
-                    const results = item?.interpretation?.results;
-                    const canPark = Array.isArray(results) && results.some(r => r && r.canParkNow === true);
+                    // DEFENSIVE: Fallback to empty array and safe some check
+                    const results = item?.interpretation?.results || [];
+                    const canPark = Array.isArray(results) && results.some(r => r?.canParkNow === true);
 
                     return (
                       <div key={item.id} className="relative group shrink-0">
@@ -243,19 +243,10 @@ const App: React.FC = () => {
                         >
                           <img src={item.image} className="w-full h-full object-cover" alt="History" />
                           <div className={`absolute bottom-0 inset-x-0 h-1 ${canPark ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                          {item.feedback && (
-                            <div className="absolute top-1 left-1 bg-white/90 backdrop-blur-sm rounded-md p-0.5 shadow-sm">
-                              {item.feedback === 'up' ? (
-                                <svg className="w-2.5 h-2.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z" /></svg>
-                              ) : (
-                                <svg className="w-2.5 h-2.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.867a1.5 1.5 0 00.8-.2z" /></svg>
-                              )}
-                            </div>
-                          )}
                         </button>
                         <button 
                           onClick={(e) => deleteHistoryItem(item.id, e)}
-                          className="absolute -top-2 -right-2 bg-white text-rose-500 rounded-full p-1 shadow-md border border-slate-100 hover:scale-110 transition-transform"
+                          className="absolute -top-2 -right-2 bg-white text-rose-500 rounded-full p-1 shadow-md border border-slate-100"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
@@ -281,19 +272,9 @@ const App: React.FC = () => {
            </div>
         ) : state.error ? (
           <div className="p-10 text-center flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
-            <div className="bg-rose-50 p-6 rounded-[32px] mb-8 border border-rose-100">
-              <svg className="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Analysis Failed</h3>
-            <p className="text-slate-500 mt-3 mb-10 max-w-[260px] mx-auto font-medium leading-relaxed">{state.error}</p>
-            <button
-              onClick={handleReset}
-              className="bg-slate-900 text-white py-4 px-12 rounded-[24px] font-extrabold shadow-xl active:scale-[0.96] transition-all flex items-center gap-3"
-            >
-              Try Again
-            </button>
+            <p className="text-slate-500 mt-3 mb-10 font-medium leading-relaxed">{state.error}</p>
+            <button onClick={handleReset} className="bg-slate-900 text-white py-4 px-12 rounded-[24px] font-extrabold shadow-xl">Try Again</button>
           </div>
         ) : state.interpretation && state.image ? (
           <Results 
@@ -310,28 +291,12 @@ const App: React.FC = () => {
 
       {!state.image && !state.isLoading && (
         <footer className="px-8 py-10 bg-white border-t border-slate-100 text-center pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
-             <div className="flex items-center justify-center gap-4 mb-4">
-                <div className="h-px bg-slate-100 flex-1" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">AusPark AI v{APP_VERSION}</span>
-                <div className="h-px bg-slate-100 flex-1" />
-             </div>
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
-               AI Guidance only. Internet required.
+               AI Guidance only. Internet required. AusPark AI v{APP_VERSION}
              </p>
              <div className="flex items-center justify-center gap-4">
-               <button 
-                 onClick={() => setShowLegal(true)}
-                 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 underline decoration-2 underline-offset-4"
-               >
-                 Privacy & Terms
-               </button>
-               <span className="text-slate-300 text-[10px]">•</span>
-               <button 
-                 onClick={() => setIsEditingProfile(true)}
-                 className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-700"
-               >
-                 Edit Permits
-               </button>
+               <button onClick={() => setShowLegal(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-600 underline decoration-2 underline-offset-4">Privacy & Terms</button>
+               <button onClick={() => setIsEditingProfile(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500">Edit Permits</button>
              </div>
         </footer>
       )}

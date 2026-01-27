@@ -65,6 +65,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
         ref={fileInputRef}
         onChange={handleFileChange}
         accept="image/*"
+        capture="environment"
         className="hidden"
       />
       
