@@ -1,4 +1,6 @@
 import React, { useRef } from 'react';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface ScannerProps {
   onImageSelected: (base64: string) => void;
@@ -18,7 +20,6 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
       };
       reader.readAsDataURL(file);
     }
-    // Reset input so the same file can be selected again if needed
     e.target.value = '';
   };
 
@@ -26,8 +27,25 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
     galleryInputRef.current?.click();
   };
 
-  const triggerCamera = () => {
-    cameraInputRef.current?.click();
+  const triggerCamera = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const image = await Camera.getPhoto({
+          quality: 90,
+          allowEditing: false,
+          resultType: CameraResultType.Base64,
+          source: CameraSource.Camera
+        });
+        
+        if (image.base64String) {
+          onImageSelected(`data:image/${image.format};base64,${image.base64String}`);
+        }
+      } catch (error) {
+        console.error('Camera error:', error);
+      }
+    } else {
+      cameraInputRef.current?.click();
+    }
   };
 
   return (
@@ -77,7 +95,6 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
         </div>
       </div>
 
-      {/* Hidden Inputs */}
       <input
         type="file"
         ref={cameraInputRef}

@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Geolocation } from '@capacitor/geolocation';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import Header from './components/Header.tsx';
 import Scanner from './components/Scanner.tsx';
 import Results from './components/Results.tsx';
@@ -12,7 +15,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v2';
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.2.5';
+const APP_VERSION = '1.3.0';
 
 const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
@@ -36,6 +39,12 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
+    // Mobile-only UI Tweaks
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Light });
+      StatusBar.setBackgroundColor({ color: '#ffffff' });
+    }
+
     try {
       const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
       if (!onboardingDone) {
@@ -98,15 +107,27 @@ const App: React.FC = () => {
     setLastAcceptedDate(now);
   };
 
-  const getLocation = (): Promise<{ lat: number; lng: number } | undefined> => {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) return resolve(undefined);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve(undefined),
-        { timeout: 5000 }
-      );
-    });
+  const getLocation = async (): Promise<{ lat: number; lng: number } | undefined> => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const coordinates = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 5000
+        });
+        return { lat: coordinates.coords.latitude, lng: coordinates.coords.longitude };
+      } else {
+        return new Promise((resolve) => {
+          if (!navigator.geolocation) return resolve(undefined);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(undefined),
+            { timeout: 5000 }
+          );
+        });
+      }
+    } catch (e) {
+      return undefined;
+    }
   };
 
   const performAnalysis = async (image: string) => {
@@ -231,7 +252,6 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-1 px-1">
                   {(state.history || []).filter(Boolean).map((item) => {
-                    // DEFENSIVE: Fallback to empty array and safe some check
                     const results = item?.interpretation?.results || [];
                     const canPark = Array.isArray(results) && results.some(r => r?.canParkNow === true);
 
