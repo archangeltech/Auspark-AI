@@ -1,4 +1,6 @@
-// Passive Service Worker v1.5 - Fixes 'Incognito Only' issues by disabling caching
+// AusPark AI Passive Service Worker v1.6
+// Fixed: Deployment-ready script that clears stale caches to solve loading issues
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -10,14 +12,12 @@ self.addEventListener('activate', (event) => {
         keys.map((key) => caches.delete(key))
       );
     }).then(() => {
-      // Clear any remaining site data if supported
       return self.clients.claim();
     })
   );
 });
 
-// Explicitly NOT intercepting fetch requests ensures the browser
-// always pulls fresh content from the server in normal mode.
+// Pass-through strategy to allow normal browser handling
 self.addEventListener('fetch', (event) => {
   return;
 });

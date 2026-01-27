@@ -12,7 +12,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v2';
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.4';
 
 const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
@@ -44,17 +44,17 @@ const App: React.FC = () => {
 
       const savedProfile = localStorage.getItem(PROFILE_KEY);
       if (savedProfile) {
-        setState(prev => ({ ...prev, profile: JSON.parse(savedProfile) }));
+        const parsedProfile = JSON.parse(savedProfile);
+        if (parsedProfile && typeof parsedProfile === 'object') {
+          setState(prev => ({ ...prev, profile: { ...prev.profile, ...parsedProfile } }));
+        }
       }
 
       const savedHistory = localStorage.getItem(HISTORY_KEY);
       if (savedHistory) {
         const parsed = JSON.parse(savedHistory);
-        // Robust validation for history
         if (Array.isArray(parsed)) {
-          setState(prev => ({ ...prev, history: parsed }));
-        } else {
-          localStorage.removeItem(HISTORY_KEY);
+          setState(prev => ({ ...prev, history: parsed.filter(item => item && item.id) }));
         }
       }
 
@@ -64,7 +64,6 @@ const App: React.FC = () => {
       }
     } catch (e) {
       console.warn("Storage recovery: Resetting corrupted local data.");
-      localStorage.clear();
     }
   }, []);
 
@@ -127,7 +126,7 @@ const App: React.FC = () => {
         interpretation,
       };
 
-      const updatedHistory = [newHistoryItem, ...state.history].slice(0, 15);
+      const updatedHistory = [newHistoryItem, ...(state.history || [])].slice(0, 15);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
 
       setState(prev => ({
@@ -141,7 +140,7 @@ const App: React.FC = () => {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: err.message || "Network Error. Please check your connection and try again."
+        error: err.message || "Network Error. Please try again."
       }));
     }
   };
@@ -160,8 +159,8 @@ const App: React.FC = () => {
   const handleFeedback = (type: 'up' | 'down') => {
     if (!state.image) return;
     
-    const updatedHistory = state.history.map(item => {
-      if (item.image === state.image) {
+    const updatedHistory = (state.history || []).map(item => {
+      if (item && item.image === state.image) {
         return { ...item, feedback: type };
       }
       return item;
@@ -173,7 +172,7 @@ const App: React.FC = () => {
 
   const deleteHistoryItem = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = state.history.filter(item => item.id !== id);
+    const updated = (state.history || []).filter(item => item && item.id !== id);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
     setState(prev => ({ ...prev, history: updated }));
   };
@@ -186,7 +185,7 @@ const App: React.FC = () => {
     return <Onboarding onComplete={saveProfile} initialProfile={isEditingProfile ? state.profile : undefined} />;
   }
 
-  const currentItem = state.history.find(h => h.image === state.image);
+  const currentItem = (state.history || []).find(h => h && h.image === state.image);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 safe-pb overflow-x-hidden">
@@ -205,9 +204,7 @@ const App: React.FC = () => {
                 Can I park <span className="text-emerald-500 underline decoration-[6px] underline-offset-[2px]">here?</span>
               </h2>
               <p className="text-slate-500 font-semibold text-base leading-snug">
-                {state.profile.hasDisabilityPermit || state.profile.hasResidentPermit 
-                  ? "Checking rules with your active permits..." 
-                  : "Analyze signs with your camera."}
+                Analyze signs with your camera.
               </p>
             </div>
 
@@ -216,7 +213,7 @@ const App: React.FC = () => {
               isLoading={state.isLoading} 
             />
 
-            {state.history.length > 0 && (
+            {(state.history || []).length > 0 && (
               <div className="mt-10 animate-fade-in">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Recent Scans</h3>
@@ -233,10 +230,10 @@ const App: React.FC = () => {
                   </button>
                 </div>
                 <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-1 px-1">
-                  {state.history.map((item) => {
-                    // DEFENSIVE CHECK: Avoid 'some' on undefined
-                    const results = item.interpretation?.results || [];
-                    const canPark = Array.isArray(results) && results.some(r => r.canParkNow);
+                  {(state.history || []).filter(Boolean).map((item) => {
+                    // ULTRA-DEFENSIVE: Ensure we don't crash on undefined results
+                    const results = item?.interpretation?.results;
+                    const canPark = Array.isArray(results) && results.some(r => r && r.canParkNow === true);
 
                     return (
                       <div key={item.id} className="relative group shrink-0">
@@ -279,7 +276,7 @@ const App: React.FC = () => {
               </div>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Reasoning...</h3>
               <p className="text-slate-500 mt-3 font-medium max-w-[240px] leading-relaxed">
-                Interpreting Australian traffic logic for {new Date().toLocaleTimeString('en-AU', {hour: '2-digit', minute:'2-digit'})}.
+                Checking the latest rules for {new Date().toLocaleTimeString('en-AU', {hour: '2-digit', minute:'2-digit'})}.
               </p>
            </div>
         ) : state.error ? (
@@ -319,7 +316,7 @@ const App: React.FC = () => {
                 <div className="h-px bg-slate-100 flex-1" />
              </div>
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
-               AI Guidance only. Internet required. Physical signs take precedence. AusPark AI is not responsible for any fines or penalties.
+               AI Guidance only. Internet required.
              </p>
              <div className="flex items-center justify-center gap-4">
                <button 

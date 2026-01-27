@@ -1,11 +1,5 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/sw.js", "destination": "/sw.js" },
-    { "source": "/manifest.json", "destination": "/manifest.json" },
-    { "source": "/logo.svg", "destination": "/logo.svg" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
   "headers": [
     {
       "source": "/sw.js",
@@ -20,6 +14,18 @@
       "headers": [
         { "key": "Content-Type", "value": "application/json" }
       ]
+    },
+    {
+      "source": "/logo.svg",
+      "headers": [
+        { "key": "Content-Type", "value": "image/svg+xml" }
+      ]
     }
+  ],
+  "rewrites": [
+    { "source": "/sw.js", "destination": "/sw.js" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/logo.svg", "destination": "/logo.svg" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

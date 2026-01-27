@@ -74,10 +74,6 @@
 
     <script>
       window.process = { env: { NODE_ENV: 'production' } };
-      window.onerror = function(msg, url, lineNo, columnNo, error) {
-        console.error('App Runtime Error:', msg, '@', lineNo);
-        return false;
-      };
     </script>
 
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
