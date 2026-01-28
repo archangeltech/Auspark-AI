@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ParkingInterpretation, UserProfile } from "../types.ts";
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const interpretParkingSign = async (
   base64Image: string,
   currentTime: string,
@@ -16,8 +18,6 @@ export const interpretParkingSign = async (
     );
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-  
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
   const locationContext = location 
@@ -57,59 +57,83 @@ export const interpretParkingSign = async (
     OUTPUT: Return JSON with errorInfo and results.
   `;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', 
-      contents: {
-        parts: [
-          { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
-          { text: prompt }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            errorInfo: {
-              type: Type.OBJECT,
-              properties: {
-                code: { type: Type.STRING, enum: ["BLURRY", "NO_SIGN", "MULTIPLE_SIGNS", "AMBIGUOUS", "SUCCESS"] },
-                message: { type: Type.STRING },
-                suggestion: { type: Type.STRING }
-              },
-              required: ["code", "message", "suggestion"]
-            },
-            results: {
-              type: Type.ARRAY,
-              items: {
+  const MAX_RETRIES = 3;
+  let lastError: any = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview', 
+        contents: {
+          parts: [
+            { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
+            { text: prompt }
+          ]
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              errorInfo: {
                 type: Type.OBJECT,
                 properties: {
-                  direction: { type: Type.STRING, enum: ["left", "right", "general"] },
-                  status: { type: Type.STRING, enum: ["ALLOWED", "FORBIDDEN", "RESTRICTED", "UNKNOWN"] },
-                  canParkNow: { type: Type.BOOLEAN },
-                  summary: { type: Type.STRING },
-                  explanation: { type: Type.STRING },
-                  rules: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  permitRequired: { type: Type.BOOLEAN },
-                  permitApplied: { type: Type.STRING, nullable: true },
-                  nextStatusChange: { type: Type.STRING, nullable: true },
-                  timeRemainingMinutes: { type: Type.NUMBER, nullable: true }
+                  code: { type: Type.STRING, enum: ["BLURRY", "NO_SIGN", "MULTIPLE_SIGNS", "AMBIGUOUS", "SUCCESS"] },
+                  message: { type: Type.STRING },
+                  suggestion: { type: Type.STRING }
                 },
-                required: ["direction", "status", "canParkNow", "summary", "explanation", "rules", "permitRequired"]
+                required: ["code", "message", "suggestion"]
+              },
+              results: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    direction: { type: Type.STRING, enum: ["left", "right", "general"] },
+                    status: { type: Type.STRING, enum: ["ALLOWED", "FORBIDDEN", "RESTRICTED", "UNKNOWN"] },
+                    canParkNow: { type: Type.BOOLEAN },
+                    summary: { type: Type.STRING },
+                    explanation: { type: Type.STRING },
+                    rules: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    permitRequired: { type: Type.BOOLEAN },
+                    permitApplied: { type: Type.STRING, nullable: true },
+                    nextStatusChange: { type: Type.STRING, nullable: true },
+                    timeRemainingMinutes: { type: Type.NUMBER, nullable: true }
+                  },
+                  required: ["direction", "status", "canParkNow", "summary", "explanation", "rules", "permitRequired"]
+                }
               }
-            }
-          },
-          required: ["errorInfo", "results"]
+            },
+            required: ["errorInfo", "results"]
+          }
         }
-      }
-    });
+      });
 
-    const resultText = response.text?.trim();
-    if (!resultText) throw new Error("Empty AI response.");
-    return JSON.parse(resultText) as ParkingInterpretation;
-  } catch (error: any) {
-    console.error("Gemini Error:", error);
-    throw error;
+      const resultText = response.text?.trim();
+      if (!resultText) throw new Error("Empty AI response.");
+      return JSON.parse(resultText) as ParkingInterpretation;
+
+    } catch (error: any) {
+      lastError = error;
+      const errorStr = JSON.stringify(error).toLowerCase();
+      const isOverloaded = errorStr.includes('503') || 
+                           errorStr.includes('overloaded') || 
+                           errorStr.includes('unavailable') ||
+                           errorStr.includes('429') || // Also retry on rate limits
+                           error.message?.toLowerCase().includes('overloaded');
+
+      if (isOverloaded && attempt < MAX_RETRIES) {
+        const backoffTime = Math.pow(2, attempt) * 1000;
+        console.warn(`Gemini overloaded (Attempt ${attempt + 1}/${MAX_RETRIES + 1}). Retrying in ${backoffTime}ms...`);
+        await sleep(backoffTime);
+        continue;
+      }
+      
+      console.error("Gemini Final Error:", error);
+      throw error;
+    }
   }
+
+  throw lastError || new Error("Unknown error during sign analysis.");
 };

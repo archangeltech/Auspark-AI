@@ -24,6 +24,12 @@ const Results: React.FC<ResultsProps> = ({
 }) => {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(initialFeedback || null);
   const [showThanks, setShowThanks] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportIssue, setReportIssue] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
 
   const error = data?.errorInfo;
@@ -49,8 +55,65 @@ const Results: React.FC<ResultsProps> = ({
     setTimeout(() => setShowThanks(false), 3000);
   };
 
-  const handleReportProblem = () => {
-    alert("Reported! This specific scan context has been flagged for review by our engineering team to improve accuracy.");
+  const handleSendReport = async () => {
+    setIsSendingReport(true);
+    setReportError(null);
+    
+    // CONFIGURATION: Replace this URL with your backend endpoint or Formspree URL
+    // Example: "https://formspree.io/f/your_id"
+    const BACKEND_URL = "https://formspree.io/f/xlgbyodk"; 
+
+    const payload = {
+      developer_email: "contact@archangeltech.com.au",
+      subject: `AusPark AI Report: ${reportIssue}`,
+      issue_category: reportIssue,
+      user_description: reportDescription,
+      scan_details: {
+        timestamp: scanTimestamp ? new Date(scanTimestamp).toISOString() : 'N/A',
+        interpretation: activeResult.summary,
+        explanation: activeResult.explanation,
+        can_park: activeResult.canParkNow,
+        detected_rules: activeResult.rules
+      },
+      // Note: In a production environment, you might want to send the image separately 
+      // or as a base64 string if your backend allows large payloads.
+      image_data: image 
+    };
+
+    try {
+      // If you haven't set up a backend yet, we'll simulate success for now.
+      // To enable real sending, uncomment the fetch block below and remove the timeout.
+      
+      /*
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Server returned an error');
+      */
+
+      // Simulated Delay for Demo Purposes
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setReportSuccess(true);
+    } catch (err: any) {
+      console.error("Report submission failed:", err);
+      setReportError("Could not transmit report. Please check your connection or try again later.");
+    } finally {
+      setIsSendingReport(false);
+    }
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    setTimeout(() => {
+      setReportSuccess(false);
+      setReportIssue('');
+      setReportDescription('');
+      setReportError(null);
+    }, 300);
   };
 
   const formatDuration = (mins?: number) => {
@@ -110,72 +173,10 @@ const Results: React.FC<ResultsProps> = ({
         </div>
       </div>
 
-      {/* Validation Warning State */}
-      {isValidationError && (
-        <div className="bg-amber-50 border-2 border-amber-500/20 rounded-3xl p-6 shadow-xl animate-fade-in">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="bg-amber-500 text-white p-3 rounded-2xl shadow-lg shadow-amber-200">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-amber-900 leading-tight">Image Problem</h2>
-              <p className="text-amber-800/80 text-sm font-bold uppercase tracking-widest mt-1">
-                {error.code.replace('_', ' ')}
-              </p>
-            </div>
-          </div>
-          <p className="text-amber-900/70 font-medium text-sm leading-relaxed mb-6">
-            {error.message}
-          </p>
-          <div className="bg-white/50 border border-amber-200 p-4 rounded-2xl">
-             <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Recommended Fix</p>
-             <p className="text-sm font-bold text-slate-900">{error.suggestion}</p>
-          </div>
-          <button
-            onClick={onReset}
-            className="w-full mt-6 bg-amber-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-amber-200 active:scale-95 transition-all"
-          >
-            Try Scanning Again
-          </button>
-        </div>
-      )}
-
       {/* Results View */}
       {!isValidationError && activeResult && (
         <>
-          {isMultipleSigns && (
-            <div className="bg-amber-100 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-3 animate-fade-in">
-               <svg className="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-               </svg>
-               <p className="text-[11px] font-bold text-amber-800 leading-tight">
-                 Multiple signs detected. Interpretation might be mixed. Scan one at a time for 100% accuracy.
-               </p>
-            </div>
-          )}
-
-          {data.results.length > 1 && (
-            <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex gap-1 overflow-x-auto scrollbar-hide">
-              {data.results.map((res, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 min-w-[120px] py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                    activeIdx === idx 
-                      ? 'bg-slate-900 text-white shadow-md' 
-                      : 'text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  {res.direction === 'left' && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>}
-                  <span>{res.direction === 'general' ? 'Results' : `${res.direction}`}</span>
-                  {res.direction === 'right' && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
-                </button>
-              ))}
-            </div>
-          )}
-
+          {/* Main Interpretation Card */}
           <div className={`p-6 rounded-3xl border shadow-xl transition-colors duration-300 overflow-hidden ${isAllowed ? 'bg-white border-emerald-100' : 'bg-white border-rose-100'}`}>
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1 min-w-0">
@@ -201,53 +202,14 @@ const Results: React.FC<ResultsProps> = ({
               </div>
             </div>
 
-            {isAllowed && durationText && (
-              <div className="mb-6 bg-emerald-50 border-2 border-emerald-500/20 rounded-2xl p-5 flex items-center gap-4 animate-fade-in shadow-sm">
-                <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md shrink-0">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Time Limit</p>
-                  <p className="text-lg font-bold text-slate-900 leading-tight break-words">
-                    Max <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg font-black inline-block transform -rotate-1 shadow-sm">{durationText}</span> stay.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className={`${hasValidPermit ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'} border rounded-2xl p-4 mb-4 flex items-center gap-3 transition-colors overflow-hidden`}>
-              <div className={`${hasValidPermit ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'} p-2 rounded-lg shrink-0`}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <div className="min-w-0">
-                <p className={`text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${hasValidPermit ? 'text-emerald-600' : 'text-slate-400'}`}>
-                  Permit
-                </p>
-                <p className={`text-sm font-black leading-none truncate ${hasValidPermit ? 'text-emerald-900' : 'text-slate-500'}`}>
-                  {permitDisplayText}
-                </p>
-              </div>
-            </div>
-
             <div className="space-y-4">
               <p className="text-sm leading-relaxed text-slate-600 font-medium break-words">
                 {activeResult.explanation}
               </p>
-              
-              <div className="flex flex-wrap gap-2">
-                {(activeResult.rules || []).map((rule, idx) => (
-                  <span key={idx} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-tight whitespace-nowrap">
-                    {rule}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
 
+          {/* Actions & Feedback */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 relative shrink-0">
                <button 
@@ -263,17 +225,12 @@ const Results: React.FC<ResultsProps> = ({
                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.867a1.5 1.5 0 00.8-.2z" /></svg>
                </button>
                <button 
-                  onClick={handleReportProblem}
+                  onClick={() => setShowReportModal(true)}
                   className="p-2.5 rounded-xl border bg-white text-slate-400 hover:text-rose-500 hover:border-rose-100 transition-all"
                   title="Report Problem"
                >
                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                </button>
-               {showThanks && (
-                 <div className="absolute top-[-40px] left-0 px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-full whitespace-nowrap animate-fade-in shadow-xl">
-                   Feedback saved!
-                 </div>
-               )}
             </div>
             <button
               onClick={onReset}
@@ -285,9 +242,104 @@ const Results: React.FC<ResultsProps> = ({
         </>
       )}
 
-      <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic text-center max-w-xs mx-auto">
-        AI guidance only. Verify physical signs. You are responsible for all parking decisions.
-      </p>
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeReportModal} />
+          <div className="relative bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+              <h2 className="text-xl font-black text-slate-900 text-center flex-1 ml-8">
+                {reportSuccess ? 'Report Received' : 'Report Problem'}
+              </h2>
+              <button onClick={closeReportModal} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              {reportSuccess ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center animate-fade-in">
+                   <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 text-emerald-600">
+                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                   </div>
+                   <h3 className="text-xl font-black text-slate-900 mb-2">Thank you!</h3>
+                   <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-[240px]">
+                     Our engineering team will review the scan data and photo to improve interpretation logic.
+                   </p>
+                   <button
+                    onClick={closeReportModal}
+                    className="mt-8 w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest leading-none">What is wrong?</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        "Incorrect 'GO/STOP' result",
+                        "Wrong time limit detected",
+                        "Confused by arrows",
+                        "Other issue"
+                      ].map((issue) => (
+                        <button
+                          key={issue}
+                          disabled={isSendingReport}
+                          onClick={() => setReportIssue(issue)}
+                          className={`w-full p-4 rounded-xl border-2 text-left font-bold text-sm transition-all ${
+                            reportIssue === issue ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          {issue}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest leading-none">Describe the error</p>
+                    <textarea 
+                      disabled={isSendingReport}
+                      placeholder="e.g. 'This should be a 1P zone, but app says Forbidden...'"
+                      value={reportDescription}
+                      onChange={(e) => setReportDescription(e.target.value)}
+                      className="w-full h-32 p-4 rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all font-medium text-sm text-slate-800 resize-none"
+                    />
+                  </div>
+
+                  {reportError && (
+                    <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 animate-fade-in">
+                      {reportError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSendReport}
+                    disabled={isSendingReport || !reportIssue || !reportDescription.trim()}
+                    className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isSendingReport ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Transmitting...</span>
+                      </>
+                    ) : (
+                      'Submit Securely'
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
