@@ -8,7 +8,6 @@ import Results from './components/Results.tsx';
 import Onboarding from './components/Onboarding.tsx';
 import LegalModal from './components/LegalModal.tsx';
 import AppSettingsModal from './components/AppSettingsModal.tsx';
-import AdBanner from './components/AdBanner.tsx';
 import { AppState, HistoryItem, UserProfile } from './types.ts';
 import { interpretParkingSign } from './services/geminiService.ts';
 
@@ -364,8 +363,6 @@ const App: React.FC = () => {
           />
         ) : null}
       </main>
-
-      <AdBanner />
 
       {!state.isLoading && (
         <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
