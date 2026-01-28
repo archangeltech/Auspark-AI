@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ParkingInterpretation, DirectionalResult } from '../types';
+import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types';
 
 interface ResultsProps {
   data: ParkingInterpretation;
@@ -10,6 +10,7 @@ interface ResultsProps {
   isRechecking?: boolean;
   initialFeedback?: 'up' | 'down';
   scanTimestamp?: number;
+  profile?: UserProfile;
 }
 
 const Results: React.FC<ResultsProps> = ({ 
@@ -20,7 +21,8 @@ const Results: React.FC<ResultsProps> = ({
   onFeedback,
   isRechecking,
   initialFeedback,
-  scanTimestamp
+  scanTimestamp,
+  profile
 }) => {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(initialFeedback || null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -77,18 +79,33 @@ const Results: React.FC<ResultsProps> = ({
     try {
       const formData = new FormData();
       formData.append('access_key', WEB3FORMS_ACCESS_KEY);
-      formData.append('subject', `AusPark AI Issue: ${reportIssue}`);
-      formData.append('from_name', 'AusPark AI Reporter');
+      formData.append('subject', `AusPark AI Issue: ${reportIssue} (${activeResult.direction})`);
+      formData.append('from_name', profile?.fullName || 'AusPark AI User');
+      formData.append('from_email', profile?.email || 'no-email@auspark.ai');
+      
       formData.append('Issue Category', reportIssue);
       formData.append('Description', reportDescription);
+      
+      if (profile) {
+        formData.append('User Name', profile.fullName);
+        formData.append('User Email', profile.email);
+        formData.append('Vehicle', profile.vehicleNumber);
+        formData.append('Permits', [
+          profile.hasDisabilityPermit ? 'Disability' : null,
+          profile.hasResidentPermit ? `Resident (${profile.residentArea})` : null,
+          profile.hasLoadingZonePermit ? 'Loading Zone' : null,
+          profile.hasBusinessPermit ? 'Business' : null
+        ].filter(Boolean).join(', '));
+      }
+
       formData.append('Scan Time', scanTimestamp ? new Date(scanTimestamp).toLocaleString('en-AU') : 'N/A');
       formData.append('AI Result', activeResult.canParkNow ? "ALLOWED" : "FORBIDDEN");
       formData.append('AI Summary', activeResult.summary);
       formData.append('AI Explanation', activeResult.explanation);
-      formData.append('Detected Rules', (activeResult.rules || []).join(', '));
+      formData.append('Direction', activeResult.direction);
 
       if (includeImage) {
-        const file = dataURLtoFile(image, 'parking_sign.jpg');
+        const file = dataURLtoFile(image, 'parking_sign_report.jpg');
         if (file) {
           formData.append('attachment', file);
         }
@@ -128,18 +145,18 @@ const Results: React.FC<ResultsProps> = ({
     }, 300);
   };
 
+  const DirectionIcon = ({ dir }: { dir: string }) => {
+    if (dir === 'left') return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
+    if (dir === 'right') return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>;
+    return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>;
+  };
+
   const formattedScanTime = scanTimestamp ? new Date(scanTimestamp).toLocaleString('en-AU', {
     weekday: 'long',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
   }) : null;
-
-  const DirectionIcon = ({ dir }: { dir: string }) => {
-    if (dir === 'left') return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
-    if (dir === 'right') return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>;
-    return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>;
-  };
 
   return (
     <div className="p-4 space-y-6 w-full max-w-lg mx-auto pb-32 animate-fade-in overflow-x-hidden">
@@ -257,7 +274,7 @@ const Results: React.FC<ResultsProps> = ({
               <h2 className="text-xl font-black text-slate-900 text-center flex-1 ml-8">{reportSuccess ? 'Report Received' : 'Report Problem'}</h2>
               <button onClick={closeReportModal} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-hide">
               {reportSuccess ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                    <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 text-emerald-600"><svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></div>
@@ -268,9 +285,11 @@ const Results: React.FC<ResultsProps> = ({
                 <>
                   <div className="space-y-4">
                     <p className="text-sm font-black text-slate-400 uppercase tracking-widest leading-none">Issue Type</p>
-                    {["Incorrect GO/STOP", "Wrong time limit", "Arrow confusion", "Other"].map(issue => (
-                      <button key={issue} onClick={() => setReportIssue(issue)} className={`w-full p-4 rounded-xl border-2 text-left font-bold text-sm transition-all ${reportIssue === issue ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-600'}`}>{issue}</button>
-                    ))}
+                    <div className="grid grid-cols-1 gap-2">
+                      {["Incorrect GO/STOP", "Wrong time limit", "Arrow confusion", "Other"].map(issue => (
+                        <button key={issue} onClick={() => setReportIssue(issue)} className={`w-full p-4 rounded-xl border-2 text-left font-bold text-sm transition-all ${reportIssue === issue ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-600'}`}>{issue}</button>
+                      ))}
+                    </div>
                   </div>
                   <textarea placeholder="Tell us what's wrong..." value={reportDescription} onChange={(e) => setReportDescription(e.target.value)} className="w-full h-32 p-4 rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all font-medium text-sm text-slate-800 resize-none" />
                   {reportError && <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100">{reportError}</div>}

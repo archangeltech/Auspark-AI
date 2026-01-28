@@ -14,9 +14,9 @@ import { interpretParkingSign } from './services/geminiService.ts';
 
 const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
-const PROFILE_KEY = 'auspark_profile_v2';
+const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.1';
 
 const LOADING_MESSAGES = [
   "Analyzing sign vision...",
@@ -43,6 +43,9 @@ const App: React.FC = () => {
     error: null,
     history: [],
     profile: {
+      fullName: '',
+      email: '',
+      vehicleNumber: '',
       hasDisabilityPermit: false,
       hasResidentPermit: false,
       hasLoadingZonePermit: false,
@@ -357,20 +360,21 @@ const App: React.FC = () => {
             isRechecking={state.isLoading}
             initialFeedback={currentItem?.feedback}
             scanTimestamp={currentItem?.timestamp}
+            profile={state.profile}
           />
         ) : null}
       </main>
 
       <AdBanner />
 
-      {!state.image && !state.isLoading && (
+      {!state.isLoading && (
         <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
                AI Guidance only. Internet required. AusPark AI v{APP_VERSION}
              </p>
              <div className="flex items-center justify-center gap-4">
                <button onClick={() => setShowLegal(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-600 underline decoration-2 underline-offset-4">Privacy & Terms</button>
-               <button onClick={() => setIsEditingProfile(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500">Edit Permits</button>
+               <button onClick={() => setIsEditingProfile(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500">Edit Profile</button>
              </div>
         </footer>
       )}
@@ -425,7 +429,7 @@ const App: React.FC = () => {
                   <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">04</div>
                   <div>
                     <p className="font-bold text-slate-900 text-sm">Review permits</p>
-                    <p className="text-xs text-slate-500 mt-1">Ensure your Resident or Disability permits are active in settings.</p>
+                    <p className="text-xs text-slate-500 mt-1">Ensure your Resident or Disability permits are active in your profile.</p>
                   </div>
                 </div>
               </div>

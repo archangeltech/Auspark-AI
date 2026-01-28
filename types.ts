@@ -6,6 +6,9 @@ export enum ParkingStatus {
 }
 
 export interface UserProfile {
+  fullName: string;
+  email: string;
+  vehicleNumber: string;
   hasDisabilityPermit: boolean;
   hasResidentPermit: boolean;
   hasLoadingZonePermit: boolean;

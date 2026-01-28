@@ -10,17 +10,46 @@ interface OnboardingProps {
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialProfile }) => {
   const [step, setStep] = useState<1 | 2 | 3>(initialProfile ? 3 : 1);
   const [profile, setProfile] = useState<UserProfile>(initialProfile || {
+    fullName: '',
+    email: '',
+    vehicleNumber: '',
     hasDisabilityPermit: false,
     hasResidentPermit: false,
     hasLoadingZonePermit: false,
     hasBusinessPermit: false,
     residentArea: '',
   });
+  const [showError, setShowError] = useState(false);
+
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
 
   const togglePermit = (key: keyof UserProfile) => {
     if (typeof profile[key] === 'boolean') {
       setProfile(prev => ({ ...prev, [key]: !prev[key] }));
     }
+  };
+
+  const handleInputChange = (field: keyof UserProfile, value: string) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
+    if (field === 'email' && validateEmail(value)) {
+      setShowError(false);
+    }
+  };
+
+  const isEmailValid = !!validateEmail(profile.email);
+
+  const handleComplete = () => {
+    if (!isEmailValid) {
+      setShowError(true);
+      return;
+    }
+    onComplete(profile);
   };
 
   if (step === 1) {
@@ -176,9 +205,56 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
       )}
 
       <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide pt-4">
-        <div className="space-y-2 mb-8 pr-12">
+        {/* Profile Identity Section */}
+        <div className="space-y-2 mb-6">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">User Profile</h2>
+          <p className="text-slate-500 font-medium">Your identification and vehicle details.</p>
+        </div>
+
+        <div className="space-y-4 mb-10">
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Full Name</label>
+            <input 
+              type="text"
+              placeholder="e.g. Sarah Jenkins"
+              value={profile.fullName}
+              onChange={(e) => handleInputChange('fullName', e.target.value)}
+              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block flex items-center gap-1.5">
+              Email Address <span className="text-rose-500 font-black">*</span>
+            </label>
+            <input 
+              type="email"
+              placeholder="e.g. sarah@example.com"
+              value={profile.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={`w-full p-4 rounded-xl border-2 bg-slate-50 focus:bg-white outline-none transition-all font-bold text-slate-900 ${showError && !isEmailValid ? 'border-rose-500' : 'border-slate-100 focus:border-emerald-500'}`}
+            />
+            {showError && !isEmailValid && (
+              <p className="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-2">
+                {profile.email.trim() === '' ? 'Email is required' : 'Enter a valid email address'}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Vehicle Registration</label>
+            <input 
+              type="text"
+              placeholder="e.g. XYZ-789"
+              value={profile.vehicleNumber}
+              onChange={(e) => handleInputChange('vehicleNumber', e.target.value)}
+              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
+            />
+          </div>
+        </div>
+
+        {/* Permits Management Section */}
+        <div className="space-y-2 mb-6">
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Active Permits</h2>
-          <p className="text-slate-500 font-medium">Select your current parking permits.</p>
+          <p className="text-slate-500 font-medium">Manage your parking exemptions here.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-3">
@@ -219,9 +295,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Resident Area / Zone</label>
             <input 
               type="text"
-              placeholder="e.g. Area 15"
+              placeholder="e.g. Area 12"
               value={profile.residentArea}
-              onChange={(e) => setProfile(prev => ({ ...prev, residentArea: e.target.value }))}
+              onChange={(e) => handleInputChange('residentArea', e.target.value)}
               className="w-full p-4 rounded-xl border-2 border-slate-100 bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
             />
           </div>
@@ -230,8 +306,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
 
       <div className="mt-6 pt-4 border-t border-slate-100 shrink-0 space-y-3">
         <button 
-          onClick={() => onComplete(profile)}
-          className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg"
+          onClick={handleComplete}
+          disabled={!isEmailValid}
+          className={`w-full py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg ${isEmailValid ? 'bg-slate-900 text-white shadow-emerald-200/50' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
         >
           {initialProfile ? 'Save Changes' : 'Complete Setup'}
         </button>
@@ -240,7 +317,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
             onClick={onCancel}
             className="w-full text-slate-400 py-2 rounded-xl font-bold text-sm active:scale-95 transition-all uppercase tracking-widest"
           >
-            Go Back
+            Cancel
           </button>
         )}
       </div>
