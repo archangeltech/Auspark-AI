@@ -5,9 +5,10 @@ import { Capacitor } from '@capacitor/core';
 interface ScannerProps {
   onImageSelected: (base64: string) => void;
   isLoading: boolean;
+  onShowHowToUse?: () => void;
 }
 
-const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
+const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHowToUse }) => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +51,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
 
   return (
     <div className="flex flex-col items-center gap-6 p-6">
-      <div className="w-full max-w-sm aspect-[3/4] rounded-[32px] border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-center p-8 transition-all hover:border-emerald-400 hover:bg-emerald-50/30">
+      <div className="w-full max-w-sm aspect-[3/4] rounded-[32px] border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-center p-8 transition-all hover:border-emerald-400 hover:bg-emerald-50/30 relative">
         <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-sm mb-6 transform -rotate-3 border border-slate-100">
           <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -94,6 +95,14 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading }) => {
           </button>
         </div>
       </div>
+
+      <button 
+        onClick={onShowHowToUse}
+        className="flex items-center gap-2 text-slate-400 hover:text-emerald-500 transition-colors py-2 px-4 rounded-xl border border-slate-200 bg-white shadow-sm active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        How to scan correctly
+      </button>
 
       <input
         type="file"

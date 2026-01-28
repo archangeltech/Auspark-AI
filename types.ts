@@ -28,6 +28,11 @@ export interface DirectionalResult {
 
 export interface ParkingInterpretation {
   results: DirectionalResult[];
+  errorInfo?: {
+    code: 'BLURRY' | 'NO_SIGN' | 'MULTIPLE_SIGNS' | 'AMBIGUOUS' | 'SUCCESS';
+    message: string;
+    suggestion: string;
+  };
 }
 
 export interface HistoryItem {

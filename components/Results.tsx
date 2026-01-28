@@ -9,6 +9,7 @@ interface ResultsProps {
   onFeedback?: (type: 'up' | 'down') => void;
   isRechecking?: boolean;
   initialFeedback?: 'up' | 'down';
+  scanTimestamp?: number;
 }
 
 const Results: React.FC<ResultsProps> = ({ 
@@ -18,13 +19,18 @@ const Results: React.FC<ResultsProps> = ({
   onRecheck, 
   onFeedback,
   isRechecking,
-  initialFeedback 
+  initialFeedback,
+  scanTimestamp
 }) => {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(initialFeedback || null);
   const [showThanks, setShowThanks] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
 
-  if (!data || !data.results || data.results.length === 0) {
+  const error = data?.errorInfo;
+  const isValidationError = error && error.code !== 'SUCCESS' && error.code !== 'MULTIPLE_SIGNS';
+  const isMultipleSigns = error?.code === 'MULTIPLE_SIGNS';
+
+  if (!data || (!data.results?.length && !isValidationError)) {
     return (
       <div className="p-10 text-center animate-fade-in w-full max-w-md mx-auto">
         <p className="text-slate-500 font-bold">Could not read sign results. Please try again.</p>
@@ -34,13 +40,17 @@ const Results: React.FC<ResultsProps> = ({
   }
 
   const activeResult: DirectionalResult = data.results[activeIdx] || data.results[0];
-  const isAllowed = activeResult.canParkNow;
+  const isAllowed = activeResult?.canParkNow;
 
   const handleFeedback = (type: 'up' | 'down') => {
     setFeedback(type);
     if (onFeedback) onFeedback(type);
     setShowThanks(true);
     setTimeout(() => setShowThanks(false), 3000);
+  };
+
+  const handleReportProblem = () => {
+    alert("Reported! This specific scan context has been flagged for review by our engineering team to improve accuracy.");
   };
 
   const formatDuration = (mins?: number) => {
@@ -53,13 +63,31 @@ const Results: React.FC<ResultsProps> = ({
     return `${remainingMins}m`;
   };
 
-  const durationText = formatDuration(activeResult.timeRemainingMinutes);
-  const hasValidPermit = activeResult.permitApplied && activeResult.permitApplied !== "null" && activeResult.permitApplied.trim() !== "";
+  const durationText = formatDuration(activeResult?.timeRemainingMinutes);
+  const hasValidPermit = activeResult?.permitApplied && activeResult.permitApplied !== "null" && activeResult.permitApplied.trim() !== "";
   const permitDisplayText = hasValidPermit ? activeResult.permitApplied : "No permits applied";
+
+  const formattedScanTime = scanTimestamp ? new Date(scanTimestamp).toLocaleString('en-AU', {
+    weekday: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }) : null;
 
   return (
     <div className="p-4 space-y-6 w-full max-w-lg mx-auto pb-32 animate-fade-in overflow-x-hidden">
-      <div className="relative group overflow-hidden rounded-2xl border border-slate-200 shadow-lg bg-slate-900">
+      {/* Context Badge */}
+      {formattedScanTime && (
+        <div className="flex justify-center -mb-2">
+           <div className="bg-slate-900/5 backdrop-blur-sm border border-slate-200 px-4 py-1.5 rounded-full flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest shadow-sm animate-fade-in">
+             <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             Calculated for: <span className="text-slate-900">{formattedScanTime}</span>
+           </div>
+        </div>
+      )}
+
+      {/* Image Preview */}
+      <div className="relative group overflow-hidden rounded-3xl border border-slate-200 shadow-lg bg-slate-900">
         <img 
           src={image} 
           alt="Sign" 
@@ -76,131 +104,186 @@ const Results: React.FC<ResultsProps> = ({
                <svg className={`w-3 h-3 ${isRechecking ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                </svg>
-               {isRechecking ? 'Updating...' : 'Check again'}
+               {isRechecking ? 'Updating...' : 'Refresh Logic'}
              </button>
            )}
         </div>
       </div>
 
-      {data.results.length > 1 && (
-        <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex gap-1 overflow-x-auto scrollbar-hide">
-          {data.results.map((res, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveIdx(idx)}
-              className={`flex-1 min-w-[120px] py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                activeIdx === idx 
-                  ? 'bg-slate-900 text-white shadow-md' 
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              {res.direction === 'left' && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>}
-              <span>{res.direction === 'general' ? 'Results' : `${res.direction}`}</span>
-              {res.direction === 'right' && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className={`p-6 rounded-3xl border shadow-xl transition-colors duration-300 overflow-hidden ${isAllowed ? 'bg-white border-emerald-100' : 'bg-white border-rose-100'}`}>
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex-1 min-w-0">
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 ${isAllowed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-               <span className={`w-1.5 h-1.5 rounded-full ${isAllowed ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
-               {isAllowed ? 'Parkable Now' : 'Restriction Active'}
-            </div>
-            <h2 className={`text-4xl font-black tracking-tight leading-none break-words ${isAllowed ? 'text-emerald-900' : 'text-rose-900'}`}>
-              {isAllowed ? 'GO AHEAD' : 'STOP'}
-            </h2>
-            <p className="text-slate-500 font-medium mt-2 break-words">{activeResult.summary}</p>
-          </div>
-          <div className={`p-4 rounded-2xl shadow-lg transition-colors shrink-0 ml-4 ${isAllowed ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-rose-500 text-white shadow-rose-200'}`}>
-             {isAllowed ? (
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                </svg>
-             ) : (
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-             )}
-          </div>
-        </div>
-
-        {isAllowed && durationText && (
-          <div className="mb-6 bg-emerald-50 border-2 border-emerald-500/20 rounded-2xl p-5 flex items-center gap-4 animate-fade-in shadow-sm">
-            <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md shrink-0">
+      {/* Validation Warning State */}
+      {isValidationError && (
+        <div className="bg-amber-50 border-2 border-amber-500/20 rounded-3xl p-6 shadow-xl animate-fade-in">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="bg-amber-500 text-white p-3 rounded-2xl shadow-lg shadow-amber-200">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Time Limit</p>
-              <p className="text-lg font-bold text-slate-900 leading-tight break-words">
-                Max <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg font-black inline-block transform -rotate-1 shadow-sm">{durationText}</span> stay.
+            <div>
+              <h2 className="text-xl font-black text-amber-900 leading-tight">Image Problem</h2>
+              <p className="text-amber-800/80 text-sm font-bold uppercase tracking-widest mt-1">
+                {error.code.replace('_', ' ')}
               </p>
             </div>
           </div>
-        )}
-
-        <div className={`${hasValidPermit ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'} border rounded-2xl p-4 mb-4 flex items-center gap-3 transition-colors overflow-hidden`}>
-          <div className={`${hasValidPermit ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'} p-2 rounded-lg shrink-0`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <p className={`text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${hasValidPermit ? 'text-emerald-600' : 'text-slate-400'}`}>
-              Permit
-            </p>
-            <p className={`text-sm font-black leading-none truncate ${hasValidPermit ? 'text-emerald-900' : 'text-slate-500'}`}>
-              {permitDisplayText}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-slate-600 font-medium break-words">
-            {activeResult.explanation}
+          <p className="text-amber-900/70 font-medium text-sm leading-relaxed mb-6">
+            {error.message}
           </p>
-          
-          <div className="flex flex-wrap gap-2">
-            {(activeResult.rules || []).map((rule, idx) => (
-              <span key={idx} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-tight whitespace-nowrap">
-                {rule}
-              </span>
-            ))}
+          <div className="bg-white/50 border border-amber-200 p-4 rounded-2xl">
+             <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Recommended Fix</p>
+             <p className="text-sm font-bold text-slate-900">{error.suggestion}</p>
           </div>
+          <button
+            onClick={onReset}
+            className="w-full mt-6 bg-amber-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-amber-200 active:scale-95 transition-all"
+          >
+            Try Scanning Again
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 relative shrink-0">
-           <button 
-             onClick={() => handleFeedback('up')}
-             className={`p-2.5 rounded-xl border transition-all ${feedback === 'up' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'bg-white text-slate-400 hover:text-slate-600'}`}
-           >
-             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z" /></svg>
-           </button>
-           <button 
-             onClick={() => handleFeedback('down')}
-             className={`p-2.5 rounded-xl border transition-all ${feedback === 'down' ? 'bg-rose-500 border-rose-500 text-white shadow-lg' : 'bg-white text-slate-400 hover:text-slate-600'}`}
-           >
-             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.867a1.5 1.5 0 00.8-.2z" /></svg>
-           </button>
-           {showThanks && (
-             <div className="absolute top-[-40px] left-0 px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-full whitespace-nowrap animate-fade-in shadow-xl">
-               Feedback saved!
-             </div>
-           )}
-        </div>
-        <button
-          onClick={onReset}
-          className="flex-1 bg-slate-900 text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all"
-        >
-          Scan Another
-        </button>
-      </div>
+      {/* Results View */}
+      {!isValidationError && activeResult && (
+        <>
+          {isMultipleSigns && (
+            <div className="bg-amber-100 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-3 animate-fade-in">
+               <svg className="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+               </svg>
+               <p className="text-[11px] font-bold text-amber-800 leading-tight">
+                 Multiple signs detected. Interpretation might be mixed. Scan one at a time for 100% accuracy.
+               </p>
+            </div>
+          )}
+
+          {data.results.length > 1 && (
+            <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex gap-1 overflow-x-auto scrollbar-hide">
+              {data.results.map((res, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveIdx(idx)}
+                  className={`flex-1 min-w-[120px] py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                    activeIdx === idx 
+                      ? 'bg-slate-900 text-white shadow-md' 
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  {res.direction === 'left' && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>}
+                  <span>{res.direction === 'general' ? 'Results' : `${res.direction}`}</span>
+                  {res.direction === 'right' && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className={`p-6 rounded-3xl border shadow-xl transition-colors duration-300 overflow-hidden ${isAllowed ? 'bg-white border-emerald-100' : 'bg-white border-rose-100'}`}>
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1 min-w-0">
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 ${isAllowed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                   <span className={`w-1.5 h-1.5 rounded-full ${isAllowed ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
+                   {isAllowed ? 'Parkable Now' : 'Restriction Active'}
+                </div>
+                <h2 className={`text-4xl font-black tracking-tight leading-none break-words ${isAllowed ? 'text-emerald-900' : 'text-rose-900'}`}>
+                  {isAllowed ? 'GO AHEAD' : 'STOP'}
+                </h2>
+                <p className="text-slate-500 font-medium mt-2 break-words">{activeResult.summary}</p>
+              </div>
+              <div className={`p-4 rounded-2xl shadow-lg transition-colors shrink-0 ml-4 ${isAllowed ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-rose-500 text-white shadow-rose-200'}`}>
+                 {isAllowed ? (
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                 ) : (
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                 )}
+              </div>
+            </div>
+
+            {isAllowed && durationText && (
+              <div className="mb-6 bg-emerald-50 border-2 border-emerald-500/20 rounded-2xl p-5 flex items-center gap-4 animate-fade-in shadow-sm">
+                <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-md shrink-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Time Limit</p>
+                  <p className="text-lg font-bold text-slate-900 leading-tight break-words">
+                    Max <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg font-black inline-block transform -rotate-1 shadow-sm">{durationText}</span> stay.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className={`${hasValidPermit ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'} border rounded-2xl p-4 mb-4 flex items-center gap-3 transition-colors overflow-hidden`}>
+              <div className={`${hasValidPermit ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'} p-2 rounded-lg shrink-0`}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className={`text-[10px] font-bold uppercase tracking-widest leading-none mb-1 ${hasValidPermit ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  Permit
+                </p>
+                <p className={`text-sm font-black leading-none truncate ${hasValidPermit ? 'text-emerald-900' : 'text-slate-500'}`}>
+                  {permitDisplayText}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-slate-600 font-medium break-words">
+                {activeResult.explanation}
+              </p>
+              
+              <div className="flex flex-wrap gap-2">
+                {(activeResult.rules || []).map((rule, idx) => (
+                  <span key={idx} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-tight whitespace-nowrap">
+                    {rule}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 relative shrink-0">
+               <button 
+                 onClick={() => handleFeedback('up')}
+                 className={`p-2.5 rounded-xl border transition-all ${feedback === 'up' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'bg-white text-slate-400 hover:text-slate-600'}`}
+               >
+                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z" /></svg>
+               </button>
+               <button 
+                 onClick={() => handleFeedback('down')}
+                 className={`p-2.5 rounded-xl border transition-all ${feedback === 'down' ? 'bg-rose-500 border-rose-500 text-white shadow-lg' : 'bg-white text-slate-400 hover:text-slate-600'}`}
+               >
+                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.867a1.5 1.5 0 00.8-.2z" /></svg>
+               </button>
+               <button 
+                  onClick={handleReportProblem}
+                  className="p-2.5 rounded-xl border bg-white text-slate-400 hover:text-rose-500 hover:border-rose-100 transition-all"
+                  title="Report Problem"
+               >
+                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+               </button>
+               {showThanks && (
+                 <div className="absolute top-[-40px] left-0 px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-full whitespace-nowrap animate-fade-in shadow-xl">
+                   Feedback saved!
+                 </div>
+               )}
+            </div>
+            <button
+              onClick={onReset}
+              className="flex-1 bg-slate-900 text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all"
+            >
+              Scan Another
+            </button>
+          </div>
+        </>
+      )}
 
       <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic text-center max-w-xs mx-auto">
         AI guidance only. Verify physical signs. You are responsible for all parking decisions.

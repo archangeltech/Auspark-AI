@@ -31,6 +31,7 @@ const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [showLegal, setShowLegal] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showHowToUse, setShowHowToUse] = useState<boolean>(false);
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [lastAcceptedDate, setLastAcceptedDate] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
@@ -51,7 +52,6 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    // Mobile-only UI Tweaks
     if (Capacitor.isNativePlatform()) {
       StatusBar.setStyle({ style: Style.Light });
       StatusBar.setBackgroundColor({ color: '#ffffff' });
@@ -88,7 +88,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Loading message cycler - Modified to stop at the last step
   useEffect(() => {
     let interval: number | undefined;
     if (state.isLoading) {
@@ -270,7 +269,8 @@ const App: React.FC = () => {
 
             <Scanner 
               onImageSelected={handleImageSelected} 
-              isLoading={state.isLoading} 
+              isLoading={state.isLoading}
+              onShowHowToUse={() => setShowHowToUse(true)}
             />
 
             {(state.history || []).length > 0 && (
@@ -356,11 +356,11 @@ const App: React.FC = () => {
             onFeedback={handleFeedback}
             isRechecking={state.isLoading}
             initialFeedback={currentItem?.feedback}
+            scanTimestamp={currentItem?.timestamp}
           />
         ) : null}
       </main>
 
-      {/* Ad Banner - Sticky above footer/safe area */}
       <AdBanner />
 
       {!state.image && !state.isLoading && (
@@ -386,6 +386,54 @@ const App: React.FC = () => {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
       />
+
+      {/* How To Use Modal */}
+      {showHowToUse && (
+        <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowHowToUse(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[85vh]">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+              <h2 className="text-xl font-black text-slate-900 text-center flex-1 ml-8">How to Use</h2>
+              <button onClick={() => setShowHowToUse(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-8 space-y-6 overflow-y-auto scrollbar-hide">
+              <div className="space-y-4">
+                <div className="flex gap-4 items-start">
+                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">01</div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Align the sign</p>
+                    <p className="text-xs text-slate-500 mt-1">Make sure the sign fills most of the frame and is level.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 items-start">
+                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">02</div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Wait for focus</p>
+                    <p className="text-xs text-slate-500 mt-1">Hold steady for 1-2 seconds before snapping the photo.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 items-start">
+                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">03</div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">One at a time</p>
+                    <p className="text-xs text-slate-500 mt-1">For best results, scan individual poles rather than busy street scenes.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 items-start">
+                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">04</div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Review permits</p>
+                    <p className="text-xs text-slate-500 mt-1">Ensure your Resident or Disability permits are active in settings.</p>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setShowHowToUse(false)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg">Got it!</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

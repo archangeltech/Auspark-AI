@@ -35,21 +35,26 @@ export const interpretParkingSign = async (
   const prompt = `
     Analyze the provided image of Australian parking sign(s).
     
-    CRITICAL: Detect Arrows for Left and Right sides.
+    TASK 1: VALIDATE IMAGE QUALITY & CONTENT
+    Check for the following common failure scenarios:
+    1. Poor quality: Is the text unreadable or sign extremely blurry? (Code: BLURRY)
+    2. No sign: Is there no parking sign in the frame? (Code: NO_SIGN)
+    3. Multiple signs: Are there more than 2 distinct physical poles or a chaotic array of signs? (Code: MULTIPLE_SIGNS)
+    4. Ambiguity: Are the rules conflicting or the image so cluttered it's unsafe to guess? (Code: AMBIGUOUS)
 
-    CONTEXT:
-    - Time: ${currentTime}
-    - Day: ${userDay}
+    TASK 2: INTERPRET RULES
+    If the image is clear, detect Arrows (Left/Right) and apply rules:
+    - Current Time: ${currentTime}
+    - Current Day: ${userDay}
     - ${locationContext}
     ${permitContext}
 
-    AUSTRALIAN PARKING RULES TO APPLY:
-    1. Disability Permits: 1P -> 2H, 1/2P -> 2H. Often allow double time in green-sign time-limited bays.
-    2. Resident Permits: Exempt from 'Permit Zone' and time limits in matching 'Area' zones.
-    3. Loading Zones: Require appropriate commercial or loading zone permits.
-    4. Business Permits: Often allow parking in specific trader or business zones.
+    AUSTRALIAN RULES:
+    1. Disability Permits: 1P -> 2H, 1/2P -> 2H in green-sign zones.
+    2. Resident Permits: Exempt from Permit Zone and time limits in matching Area.
+    3. Loading Zones: Require commercial/LZ permits.
 
-    Return JSON with interpretation results for each direction.
+    OUTPUT: Return JSON with errorInfo and results.
   `;
 
   try {
@@ -66,6 +71,15 @@ export const interpretParkingSign = async (
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            errorInfo: {
+              type: Type.OBJECT,
+              properties: {
+                code: { type: Type.STRING, enum: ["BLURRY", "NO_SIGN", "MULTIPLE_SIGNS", "AMBIGUOUS", "SUCCESS"] },
+                message: { type: Type.STRING },
+                suggestion: { type: Type.STRING }
+              },
+              required: ["code", "message", "suggestion"]
+            },
             results: {
               type: Type.ARRAY,
               items: {
@@ -86,7 +100,7 @@ export const interpretParkingSign = async (
               }
             }
           },
-          required: ["results"]
+          required: ["errorInfo", "results"]
         }
       }
     });
