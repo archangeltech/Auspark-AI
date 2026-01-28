@@ -8,6 +8,7 @@ import Results from './components/Results.tsx';
 import Onboarding from './components/Onboarding.tsx';
 import LegalModal from './components/LegalModal.tsx';
 import AppSettingsModal from './components/AppSettingsModal.tsx';
+import AdBanner from './components/AdBanner.tsx';
 import { AppState, HistoryItem, UserProfile } from './types.ts';
 import { interpretParkingSign } from './services/geminiService.ts';
 
@@ -219,7 +220,7 @@ const App: React.FC = () => {
       
       <main className="flex-1 overflow-y-auto scrollbar-hide">
         {!state.image ? (
-          <div className="max-w-md mx-auto py-6 px-5 pb-20">
+          <div className="max-w-md mx-auto py-6 px-5 pb-10">
             <div className="mb-6 space-y-1">
               <h2 className="text-[32px] font-black text-slate-900 leading-tight tracking-tight">
                 Can I park <span className="text-emerald-500 underline decoration-[6px] underline-offset-[2px]">here?</span>
@@ -278,7 +279,7 @@ const App: React.FC = () => {
             )}
           </div>
         ) : state.isLoading ? (
-           <div className="flex flex-col items-center justify-center h-[75vh] p-8 text-center animate-fade-in">
+           <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center animate-fade-in">
               <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center mb-8 relative shadow-2xl shadow-emerald-200/50">
                  <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-[32px] animate-spin" />
                  <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,8 +310,11 @@ const App: React.FC = () => {
         ) : null}
       </main>
 
+      {/* Ad Banner - Sticky above footer/safe area */}
+      <AdBanner />
+
       {!state.image && !state.isLoading && (
-        <footer className="px-8 py-10 bg-white border-t border-slate-100 text-center pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
+        <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
                AI Guidance only. Internet required. AusPark AI v{APP_VERSION}
              </p>
