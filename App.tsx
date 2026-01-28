@@ -18,12 +18,23 @@ const PROFILE_KEY = 'auspark_profile_v2';
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
 const APP_VERSION = '1.3.0';
 
+const LOADING_MESSAGES = [
+  "Analyzing sign vision...",
+  "Interpreting rule hierarchy...",
+  "Checking time restrictions...",
+  "Applying permit exemptions...",
+  "Calculating stay duration...",
+  "Finalizing parking logic..."
+];
+
 const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [showLegal, setShowLegal] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [lastAcceptedDate, setLastAcceptedDate] = useState<string | null>(null);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  
   const [state, setState] = useState<AppState>({
     image: null,
     interpretation: null,
@@ -76,6 +87,23 @@ const App: React.FC = () => {
       console.warn("Storage recovery: Resetting corrupted local data.");
     }
   }, []);
+
+  // Loading message cycler - Modified to stop at the last step
+  useEffect(() => {
+    let interval: number | undefined;
+    if (state.isLoading) {
+      setLoadingMsgIdx(0);
+      interval = window.setInterval(() => {
+        setLoadingMsgIdx(prev => {
+          if (prev < LOADING_MESSAGES.length - 1) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, 1800);
+    }
+    return () => clearInterval(interval);
+  }, [state.isLoading]);
 
   const getFormattedDate = () => {
     return new Date().toLocaleString('en-AU', {
@@ -290,16 +318,28 @@ const App: React.FC = () => {
           </div>
         ) : state.isLoading ? (
            <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center animate-fade-in">
-              <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center mb-8 relative shadow-2xl shadow-emerald-200/50">
+              <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center mb-10 relative shadow-2xl shadow-emerald-200/50">
                  <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-[32px] animate-spin" />
                  <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                  </svg>
               </div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Reasoning...</h3>
-              <p className="text-slate-500 mt-3 font-medium max-w-[240px] leading-relaxed">
-                Checking the latest rules for {new Date().toLocaleTimeString('en-AU', {hour: '2-digit', minute:'2-digit'})}.
-              </p>
+              
+              <div className="space-y-3">
+                <div className="bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full inline-block text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                  Step {loadingMsgIdx + 1} of {LOADING_MESSAGES.length}
+                </div>
+                
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight h-8 flex items-center justify-center overflow-hidden">
+                   <span key={loadingMsgIdx} className="animate-fade-in inline-block">
+                     {LOADING_MESSAGES[loadingMsgIdx]}
+                   </span>
+                </h3>
+                
+                <p className="text-slate-400 font-semibold text-xs leading-relaxed max-w-[200px] mx-auto">
+                  Analysing rules for {new Date().toLocaleTimeString('en-AU', {hour: '2-digit', minute:'2-digit'})}
+                </p>
+              </div>
            </div>
         ) : state.error ? (
           <div className="p-10 text-center flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
