@@ -49,6 +49,14 @@ export const interpretParkingSign = async (
     - ${locationContext}
     ${permitContext}
 
+    LANGUAGE STYLE (IMPORTANT):
+    Use natural, clear, non-technical English in 'summary' and 'explanation'.
+    - Convert "1P", "2P", "1/2P" into "1 hour", "2 hours", "30 minutes".
+    - Convert "Metered", "Meter", or "Ticket" into "paid parking".
+    - Convert "No Standing" into "No stopping or waiting".
+    - Example: Instead of "1P Metered Parking", use "1 hour paid parking".
+    - Example: Instead of "1/2P Resident Permit Area 5", use "30 minute parking (Free for Area 5 residents)".
+
     AUSTRALIAN RULES:
     1. Disability Permits: 1P -> 2H, 1/2P -> 2H in green-sign zones.
     2. Resident Permits: Exempt from Permit Zone and time limits in matching Area.
@@ -120,7 +128,7 @@ export const interpretParkingSign = async (
       const isOverloaded = errorStr.includes('503') || 
                            errorStr.includes('overloaded') || 
                            errorStr.includes('unavailable') ||
-                           errorStr.includes('429') || // Also retry on rate limits
+                           errorStr.includes('429') || 
                            error.message?.toLowerCase().includes('overloaded');
 
       if (isOverloaded && attempt < MAX_RETRIES) {
