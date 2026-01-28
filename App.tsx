@@ -366,8 +366,9 @@ const App: React.FC = () => {
 
       {!state.isLoading && (
         <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-             <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[280px] mx-auto mb-4">
-               AI Guidance only. Internet required. AusPark AI v{APP_VERSION}
+             <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[320px] mx-auto mb-4">
+               AI Guidance only. Users are solely responsible for their own parking and compliance.<br/>
+               AusPark AI v{APP_VERSION} - Internet required
              </p>
              <div className="flex items-center justify-center gap-4">
                <button onClick={() => setShowLegal(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-600 underline decoration-2 underline-offset-4">Privacy & Terms</button>
