@@ -3,10 +3,11 @@ import { UserProfile } from '../types';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
+  onCancel?: () => void;
   initialProfile?: UserProfile;
 }
 
-const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) => {
+const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialProfile }) => {
   const [step, setStep] = useState<1 | 2 | 3>(initialProfile ? 3 : 1);
   const [profile, setProfile] = useState<UserProfile>(initialProfile || {
     hasDisabilityPermit: false,
@@ -162,8 +163,20 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
 
   return (
     <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 safe-pb animate-fade-in max-w-md mx-auto overflow-hidden">
+      {initialProfile && onCancel && (
+        <button 
+          onClick={onCancel}
+          className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 transition-colors z-[210]"
+          aria-label="Cancel editing"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+
       <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide pt-4">
-        <div className="space-y-2 mb-8">
+        <div className="space-y-2 mb-8 pr-12">
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">Active Permits</h2>
           <p className="text-slate-500 font-medium">Select your current parking permits.</p>
         </div>
@@ -215,13 +228,21 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, initialProfile }) =
         )}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-slate-100 shrink-0">
+      <div className="mt-6 pt-4 border-t border-slate-100 shrink-0 space-y-3">
         <button 
           onClick={() => onComplete(profile)}
           className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg"
         >
           {initialProfile ? 'Save Changes' : 'Complete Setup'}
         </button>
+        {initialProfile && onCancel && (
+          <button 
+            onClick={onCancel}
+            className="w-full text-slate-400 py-2 rounded-xl font-bold text-sm active:scale-95 transition-all uppercase tracking-widest"
+          >
+            Go Back
+          </button>
+        )}
       </div>
     </div>
   );

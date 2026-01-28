@@ -102,6 +102,10 @@ const App: React.FC = () => {
     setIsEditingProfile(false);
   };
 
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+  };
+
   const handleAcceptLegal = () => {
     const now = getFormattedDate();
     localStorage.setItem(LEGAL_ACCEPTED_KEY, now);
@@ -204,7 +208,13 @@ const App: React.FC = () => {
   };
 
   if (showOnboarding || isEditingProfile) {
-    return <Onboarding onComplete={saveProfile} initialProfile={isEditingProfile ? state.profile : undefined} />;
+    return (
+      <Onboarding 
+        onComplete={saveProfile} 
+        onCancel={isEditingProfile ? handleCancelEdit : undefined}
+        initialProfile={isEditingProfile ? state.profile : undefined} 
+      />
+    );
   }
 
   const currentItem = (state.history || []).find(h => h && h.image === state.image);
