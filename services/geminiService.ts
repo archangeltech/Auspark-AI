@@ -14,7 +14,7 @@ export const interpretParkingSign = async (
 
   if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
     throw new Error(
-      "API Key is missing. Please ensure API_KEY is set in your deployment environment variables."
+      "API Key is missing. For mobile apps (Android/iOS), the API_KEY must be set as an environment variable on your computer when running 'npm run build' so it can be baked into the app."
     );
   }
 
@@ -70,7 +70,8 @@ export const interpretParkingSign = async (
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      // Fix: Always use process.env.API_KEY directly when initializing the GoogleGenAI client instance
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', 
         contents: {
@@ -118,6 +119,7 @@ export const interpretParkingSign = async (
         }
       });
 
+      // Fix: Access response.text property directly as per guidelines
       const resultText = response.text?.trim();
       if (!resultText) throw new Error("Empty AI response.");
       return JSON.parse(resultText) as ParkingInterpretation;

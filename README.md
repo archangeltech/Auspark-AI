@@ -1,4 +1,3 @@
-
 # AusPark AI - Deployment Guide
 
 ## Mobile Testing (Local)
@@ -6,6 +5,32 @@
 2. Install localtunnel: `npm install -g localtunnel`
 3. Run: `lt --port 8080`
 4. Open the generated URL on your iPhone/Android.
+
+## Deployment to Google Play (Android)
+To fix "API Key missing" errors in your Android app, you **must** provide the key during the build process.
+
+### Option A: Use a .env file (Recommended)
+1. Create a file named `.env` in the project root.
+2. Add your key: `API_KEY=your_actual_key_here`
+3. Run the build:
+   ```bash
+   npm run build
+   npx cap sync android
+   ```
+4. Open Android Studio and generate your Signed Bundle (.aab).
+
+### Option B: Terminal Environment Variable
+**macOS / Linux:**
+```bash
+API_KEY=your_key_here npm run build
+npx cap sync android
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:API_KEY="your_key_here"; npm run build
+npx cap sync android
+```
 
 ## Production (Vercel - Recommended)
 1. Push this folder to a GitHub repository.
