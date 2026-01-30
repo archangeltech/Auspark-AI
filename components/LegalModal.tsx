@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface LegalModalProps {
@@ -37,12 +38,12 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, lastAcceptedDa
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm text-slate-600 leading-relaxed scrollbar-hide">
           <section>
             <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Guidance Only Disclaimer</h3>
-            <p>AusPark AI is an assistive tool designed for informational guidance. AI models can and do make mistakes, misinterpret visual data, or fail to account for temporary local restrictions. <strong>This app is not a substitute for your own knowledge of Australian Road Rules.</strong></p>
+            <p>Parking Sign Reader is an assistive tool designed for informational guidance. AI models can and do make mistakes, misinterpret visual data, or fail to account for temporary local restrictions. <strong>This app is not a substitute for your own knowledge of Australian Road Rules.</strong></p>
           </section>
 
           <section>
             <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">User Responsibility</h3>
-            <p>You remain solely responsible for your vehicle and all parking decisions. You must manually verify all physical signs, painted lines, and curb markings. AusPark AI is not liable for any fines, infringements, towing costs, or damages resulting from the use of this service.</p>
+            <p>You remain solely responsible for your vehicle and all parking decisions. You must manually verify all physical signs, painted lines, and curb markings. Parking Sign Reader is not liable for any fines, infringements, towing costs, or damages resulting from the use of this service.</p>
           </section>
 
           <section>
@@ -52,7 +53,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, lastAcceptedDa
 
           <section>
             <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Privacy & Data Handling</h3>
-            <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time via Google Gemini and are not stored permanently by AusPark AI. We do not track individuals or sell personal data to third parties.</p>
+            <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time via Google Gemini and are not stored permanently by Parking Sign Reader. We do not track individuals or sell personal data to third parties.</p>
           </section>
 
           <section>

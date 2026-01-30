@@ -67,7 +67,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
                </svg>
             </div>
             <div className="absolute -top-2 -right-6 bg-slate-900 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter shadow-lg">
-              AU Smart App
+              Official App
             </div>
           </div>
           
@@ -100,17 +100,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
                  </div>
                  <div className="flex flex-col">
                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 2</span>
-                   <p className="font-bold text-slate-800 text-sm leading-tight">Upload to the app</p>
-                 </div>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-[24px] border border-slate-100 flex items-center gap-4 group hover:border-emerald-200 transition-colors">
-                 <div className="bg-white p-3 rounded-2xl shadow-sm shrink-0 text-emerald-500">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                 </div>
-                 <div className="flex flex-col">
-                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 3</span>
-                   <p className="font-bold text-slate-800 text-sm leading-tight">Get an instant answer</p>
+                   <p className="font-bold text-slate-800 text-sm leading-tight">Instant AI Interpretation</p>
                  </div>
               </div>
 
@@ -119,8 +109,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                  </div>
                  <div className="flex flex-col">
-                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 4</span>
-                   <p className="font-bold text-slate-800 text-sm leading-tight">Add permits for accuracy</p>
+                   <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 3</span>
+                   <p className="font-bold text-slate-800 text-sm leading-tight">Customise for your permits</p>
                  </div>
               </div>
             </div>
@@ -151,12 +141,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
           <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-slate-600 leading-relaxed scrollbar-hide border-t border-slate-100 pt-6">
             <section>
               <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Guidance Only Disclaimer</h3>
-              <p>AusPark AI is an assistive tool designed for informational guidance. AI models can and do make mistakes, misinterpret visual data, or fail to account for temporary local restrictions. <strong>This app is not a substitute for your own knowledge of Australian Road Rules.</strong></p>
+              <p>Parking Sign Reader is an assistive tool designed for informational guidance. AI models can and do make mistakes, misinterpret visual data, or fail to account for temporary local restrictions. <strong>This app is not a substitute for your own knowledge of Australian Road Rules.</strong></p>
             </section>
 
             <section>
               <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">User Responsibility</h3>
-              <p>You remain solely responsible for your vehicle and all parking decisions. You must manually verify all physical signs, painted lines, and curb markings. AusPark AI is not liable for any fines, infringements, towing costs, or damages resulting from the use of this service.</p>
+              <p>You remain solely responsible for your vehicle and all parking decisions. You must manually verify all physical signs, painted lines, and curb markings. Parking Sign Reader is not liable for any fines, infringements, towing costs, or damages resulting from the use of this service.</p>
             </section>
 
             <section>
@@ -166,7 +156,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
 
             <section>
               <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Privacy & Data Handling</h3>
-              <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time via Google Gemini and are not stored permanently by AusPark AI. We do not track individuals or sell personal data to third parties.</p>
+              <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time via Google Gemini and are not stored permanently by Parking Sign Reader. We do not track individuals or sell personal data to third parties.</p>
             </section>
 
             <section>

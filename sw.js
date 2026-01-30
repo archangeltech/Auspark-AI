@@ -1,4 +1,5 @@
-// AusPark AI Passive Service Worker v1.6
+
+// Parking Sign Reader Passive Service Worker v1.6
 // Fixed: Deployment-ready script that clears stale caches to solve loading issues
 
 self.addEventListener('install', (event) => {

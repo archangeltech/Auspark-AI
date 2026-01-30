@@ -79,9 +79,9 @@ const Results: React.FC<ResultsProps> = ({
     try {
       const formData = new FormData();
       formData.append('access_key', WEB3FORMS_ACCESS_KEY);
-      formData.append('subject', `AusPark AI Issue: ${reportIssue} (${activeResult.direction})`);
-      formData.append('from_name', profile?.fullName || 'AusPark AI User');
-      formData.append('from_email', profile?.email || 'no-email@auspark.ai');
+      formData.append('subject', `Parking Sign Reader Issue: ${reportIssue} (${activeResult.direction})`);
+      formData.append('from_name', profile?.fullName || 'Parking Sign Reader User');
+      formData.append('from_email', profile?.email || 'support@parkingsignreader.ai');
       
       formData.append('Issue Category', reportIssue);
       formData.append('Description', reportDescription);

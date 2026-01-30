@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface AppSettingsModalProps {
@@ -13,7 +14,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
       await navigator.mediaDevices.getUserMedia({ video: true });
       alert("Permission requested! If you don't see a prompt, please check your browser's address bar or site settings.");
     } catch (err) {
-      alert("Permission was denied or is blocked. Please go to your device Settings > Browser > AusPark AI and enable Camera access manually.");
+      alert("Permission was denied or is blocked. Please go to your device Settings > Browser > Parking Sign Reader and enable Camera access manually.");
     }
   };
 
@@ -120,7 +121,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
         </div>
         
         <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">AusPark AI v1.2.1 • Built for AU</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Parking Sign Reader v1.2.1 • Built for AU</p>
         </div>
       </div>
     </div>

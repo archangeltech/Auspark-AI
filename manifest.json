@@ -1,6 +1,7 @@
+
 {
-  "short_name": "AusPark AI",
-  "name": "AusPark AI - Parking Sign Interpreter",
+  "short_name": "Sign Reader",
+  "name": "Parking Sign Reader - Interpreter",
   "description": "AI-powered interpreter for Australian parking signs. Know instantly if you can park now.",
   "categories": ["utilities", "navigation", "travel"],
   "icons": [

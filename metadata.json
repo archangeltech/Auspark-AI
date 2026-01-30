@@ -1,5 +1,5 @@
 {
-  "name": "AusPark AI",
+  "name": "Parking Sign Reader",
   "description": "Instantly decode complex Australian parking signs with AI. Snap a photo and know if you can park now. Support for all Australian states and parking permits.",
   "requestFramePermissions": [
     "camera",

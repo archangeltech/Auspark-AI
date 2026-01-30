@@ -1,4 +1,5 @@
 
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -79,7 +80,7 @@ const server = http.createServer((req, res) => {
 
 // Important: Listen on 0.0.0.0 for containerized environments
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 AusPark AI Server v1.2.1`);
+  console.log(`🚀 Parking Sign Reader Server v1.2.1`);
   console.log(`Port: ${PORT}`);
   console.log(`Host: 0.0.0.0`);
 });

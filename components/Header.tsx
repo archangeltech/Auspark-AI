@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface HeaderProps {
@@ -12,8 +13,8 @@ const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSetti
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-5 py-3.5 flex items-center justify-between">
       <button 
         onClick={onLogoClick}
-        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none" 
-        aria-label="AusPark AI Home - Return to Scan"
+        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none text-left" 
+        aria-label="Parking Sign Reader Home - Return to Scan"
       >
         <div className="shrink-0">
           <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,7 +24,9 @@ const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSetti
             <text x="50" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="black">P</text>
           </svg>
         </div>
-        <h1 className="text-lg font-black tracking-tight text-slate-900 leading-none">AusPark <span className="text-emerald-500">AI</span></h1>
+        <h1 className="text-lg font-black tracking-tight text-slate-900 leading-tight">
+          Parking Sign <span className="text-emerald-500">Reader</span>
+        </h1>
       </button>
       
       <div className="flex items-center gap-1">

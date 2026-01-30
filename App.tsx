@@ -57,7 +57,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setStyle({ style: Style.Light });
+      StatusBar.setStyle({ style: Style.Style.Light });
       StatusBar.setBackgroundColor({ color: '#ffffff' });
     }
 
@@ -370,17 +370,19 @@ const App: React.FC = () => {
             <button onClick={handleReset} className="bg-slate-900 text-white py-4 px-12 rounded-[24px] font-extrabold shadow-xl">Try Again</button>
           </div>
         ) : state.interpretation && state.image ? (
-          <Results 
-            data={state.interpretation} 
-            image={state.image} 
-            onReset={handleReset} 
-            onRecheck={handleRecheck}
-            onFeedback={handleFeedback}
-            isRechecking={state.isLoading}
-            initialFeedback={currentItem?.feedback}
-            scanTimestamp={currentItem?.timestamp}
-            profile={state.profile}
-          />
+          <div className="flex flex-col">
+            <Results 
+              data={state.interpretation} 
+              image={state.image} 
+              onReset={handleReset} 
+              onRecheck={handleRecheck}
+              onFeedback={handleFeedback}
+              isRechecking={state.isLoading}
+              initialFeedback={currentItem?.feedback}
+              scanTimestamp={currentItem?.timestamp}
+              profile={state.profile}
+            />
+          </div>
         ) : null}
       </main>
 
@@ -388,7 +390,7 @@ const App: React.FC = () => {
         <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[320px] mx-auto mb-4">
                AI Guidance only. Users are solely responsible for their own parking and compliance.<br/>
-               AusPark AI v{APP_VERSION} - Internet required
+               Parking Sign Reader v{APP_VERSION} - Internet required
              </p>
              <div className="flex items-center justify-center gap-4">
                <button onClick={() => setShowLegal(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-600 underline decoration-2 underline-offset-4">Privacy & Terms</button>
