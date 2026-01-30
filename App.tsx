@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
@@ -57,7 +57,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setStyle({ style: Style.Style.Light });
+      StatusBar.setStyle({ style: Style.Light });
       StatusBar.setBackgroundColor({ color: '#ffffff' });
     }
 
