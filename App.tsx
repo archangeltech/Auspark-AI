@@ -10,6 +10,7 @@ import LegalModal from './components/LegalModal.tsx';
 import AppSettingsModal from './components/AppSettingsModal.tsx';
 import { AppState, HistoryItem, UserProfile } from './types.ts';
 import { interpretParkingSign } from './services/geminiService.ts';
+import { dbService } from './services/dbService.ts';
 
 const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
@@ -34,6 +35,7 @@ const App: React.FC = () => {
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [lastAcceptedDate, setLastAcceptedDate] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   
   const [state, setState] = useState<AppState>({
     image: null,
@@ -117,18 +119,35 @@ const App: React.FC = () => {
     });
   };
 
-  const saveProfile = (profile: UserProfile) => {
-    if (!localStorage.getItem(ONBOARDING_KEY)) {
-      const now = getFormattedDate();
-      localStorage.setItem(LEGAL_ACCEPTED_KEY, now);
-      setLastAcceptedDate(now);
+  const saveProfile = async (profile: UserProfile) => {
+    setIsSyncing(true);
+    try {
+      // 1. Immediate local save for responsiveness
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      setState(prev => ({ ...prev, profile }));
+
+      // 2. Sync to Database
+      const syncedProfile = await dbService.saveProfile(profile);
+      
+      // 3. Update state with DB-generated ID or Sync timestamp
+      setState(prev => ({ ...prev, profile: syncedProfile }));
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(syncedProfile));
+
+      if (!localStorage.getItem(ONBOARDING_KEY)) {
+        const now = getFormattedDate();
+        localStorage.setItem(LEGAL_ACCEPTED_KEY, now);
+        setLastAcceptedDate(now);
+      }
+      
+      localStorage.setItem(ONBOARDING_KEY, 'true');
+      setShowOnboarding(false);
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error("Failed to sync profile:", error);
+      alert("Profile saved locally, but cloud sync failed. Please check your connection.");
+    } finally {
+      setIsSyncing(false);
     }
-    
-    localStorage.setItem(ONBOARDING_KEY, 'true');
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    setState(prev => ({ ...prev, profile }));
-    setShowOnboarding(false);
-    setIsEditingProfile(false);
   };
 
   const handleCancelEdit = () => {
@@ -241,7 +260,8 @@ const App: React.FC = () => {
       <Onboarding 
         onComplete={saveProfile} 
         onCancel={isEditingProfile ? handleCancelEdit : undefined}
-        initialProfile={isEditingProfile ? state.profile : undefined} 
+        initialProfile={isEditingProfile ? state.profile : undefined}
+        isSyncing={isSyncing}
       />
     );
   }

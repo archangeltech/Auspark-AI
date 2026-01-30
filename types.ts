@@ -6,6 +6,7 @@ export enum ParkingStatus {
 }
 
 export interface UserProfile {
+  id?: string;
   fullName: string;
   email: string;
   vehicleNumber: string;
@@ -14,6 +15,7 @@ export interface UserProfile {
   hasLoadingZonePermit: boolean;
   hasBusinessPermit: boolean;
   residentArea?: string;
+  lastSynced?: number;
 }
 
 export interface DirectionalResult {
