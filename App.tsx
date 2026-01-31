@@ -37,6 +37,7 @@ const App: React.FC = () => {
   const [lastAcceptedDate, setLastAcceptedDate] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [resetKey, setResetKey] = useState<number>(0); // Used to force remount of Onboarding
   
   const [state, setState] = useState<AppState>({
     image: null,
@@ -145,13 +146,13 @@ const App: React.FC = () => {
   };
 
   const handleDeleteProfile = () => {
-    // 1. Wipe all relevant storage
+    // 1. Wipe all local storage related to the app
     localStorage.removeItem(PROFILE_KEY);
     localStorage.removeItem(ONBOARDING_KEY);
     localStorage.removeItem(HISTORY_KEY);
     localStorage.removeItem(LEGAL_ACCEPTED_KEY);
     
-    // 2. Reset App State to default
+    // 2. Reset the main App State to defaults
     setState({
       image: null,
       interpretation: null,
@@ -172,10 +173,11 @@ const App: React.FC = () => {
       }
     });
     
-    // 3. Update navigation state to show onboarding from step 1
+    // 3. Reset UI flags
     setShowOnboarding(true);
     setIsEditingProfile(false);
     setLastAcceptedDate(null);
+    setResetKey(prev => prev + 1); // Trigger remount of Onboarding component
   };
 
   const handleCancelEdit = () => {
@@ -284,6 +286,7 @@ const App: React.FC = () => {
   if (showOnboarding || isEditingProfile) {
     return (
       <Onboarding 
+        key={resetKey} // Forces component to reset to step 1 when key changes
         onComplete={saveProfile} 
         onDelete={handleDeleteProfile}
         onCancel={isEditingProfile ? handleCancelEdit : undefined}

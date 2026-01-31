@@ -48,8 +48,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
       if (onDelete) {
         onDelete();
       }
-      // Revert to start
+      // Revert to start and clear local component states
       setStep(1);
+      setPrivacyAgreed(false);
       setProfile({
         fullName: '',
         email: '',
@@ -172,7 +173,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
               >
                 Delete Profile
               </button>
-              <p className="text-center text-[9px] font-medium text-slate-400 mt-3 uppercase tracking-wider">Warning: This action clears all your data.</p>
+              <p className="text-center text-[9px] font-medium text-slate-400 mt-3 uppercase tracking-wider">Warning: This action clears all your local data.</p>
            </div>
         )}
       </div>
