@@ -30,6 +30,8 @@ export const interpretParkingSign = async (
     - Resident Permit: ${profile.hasResidentPermit} (Area: ${profile.residentArea || 'N/A'})
     - Loading Zone Permit: ${profile.hasLoadingZonePermit}
     - Business Permit: ${profile.hasBusinessPermit}
+    - Bus Permit / Authorized Vehicle: ${profile.hasBusPermit}
+    - Taxi Permit / Authorized Taxi: ${profile.hasTaxiPermit}
   `;
 
   const prompt = `
@@ -61,6 +63,7 @@ export const interpretParkingSign = async (
     1. Disability Permits: 1P -> 2H, 1/2P -> 2H in green-sign zones.
     2. Resident Permits: Exempt from Permit Zone and time limits in matching Area.
     3. Loading Zones: Require commercial/LZ permits.
+    4. Bus/Taxi Zones: Only allowed if specific permit is active.
 
     OUTPUT: Return JSON with errorInfo and results.
   `;
@@ -70,7 +73,6 @@ export const interpretParkingSign = async (
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // Fix: Always use process.env.API_KEY directly when initializing the GoogleGenAI client instance
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', 
@@ -119,7 +121,6 @@ export const interpretParkingSign = async (
         }
       });
 
-      // Fix: Access response.text property directly as per guidelines
       const resultText = response.text?.trim();
       if (!resultText) throw new Error("Empty AI response.");
       return JSON.parse(resultText) as ParkingInterpretation;

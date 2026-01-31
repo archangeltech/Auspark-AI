@@ -1,21 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
-import { UserProfile } from "../types.ts";
+import { UserProfile, ParkingReport } from "../types.ts";
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
 
-// Only initialize if keys are present to prevent crashes in local dev without DB
 const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
 export const dbService = {
-  /**
-   * Saves or updates the user profile in Supabase.
-   */
   async saveProfile(profile: UserProfile): Promise<UserProfile> {
     if (!supabase) {
-      console.warn("Supabase not configured. Saving to LocalStorage only.");
       const offlineProfile = { ...profile, lastSynced: Date.now(), id: profile.id || crypto.randomUUID() };
       localStorage.setItem('auspark_profile_v3', JSON.stringify(offlineProfile));
       return offlineProfile;
@@ -24,24 +19,23 @@ export const dbService = {
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
-        email: profile.email, // Using email as the unique constraint
+        email: profile.email,
         full_name: profile.fullName,
         vehicle_number: profile.vehicleNumber,
         has_disability_permit: profile.hasDisabilityPermit,
         has_resident_permit: profile.hasResidentPermit,
         has_loading_zone_permit: profile.hasLoadingZonePermit,
         has_business_permit: profile.hasBusinessPermit,
+        has_bus_permit: profile.hasBusPermit,
+        has_taxi_permit: profile.hasTaxiPermit,
         resident_area: profile.residentArea,
         last_synced: new Date().toISOString()
       }, { onConflict: 'email' })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Supabase Error: ${error.message}`);
-    }
+    if (error) throw new Error(`Supabase Error: ${error.message}`);
 
-    // Map DB snake_case back to our camelCase interface
     const updatedProfile: UserProfile = {
       id: data.id,
       fullName: data.full_name,
@@ -51,6 +45,8 @@ export const dbService = {
       hasResidentPermit: data.has_resident_permit,
       hasLoadingZonePermit: data.has_loading_zone_permit,
       hasBusinessPermit: data.has_business_permit,
+      hasBusPermit: data.has_bus_permit,
+      hasTaxiPermit: data.has_taxi_permit,
       residentArea: data.resident_area,
       lastSynced: new Date(data.last_synced).getTime()
     };
@@ -59,20 +55,41 @@ export const dbService = {
     return updatedProfile;
   },
 
-  /**
-   * Fetches the profile from the database by email.
-   */
+  async saveReport(report: ParkingReport): Promise<void> {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from('reports')
+      .insert({
+        user_email: report.userEmail,
+        issue_category: report.issueCategory,
+        description: report.description,
+        ai_summary: report.aiSummary,
+        ai_explanation: report.aiExplanation,
+        timestamp: new Date(report.timestamp).toISOString(),
+        image_attached: report.imageAttached,
+        image_data: report.imageData,
+        source: report.source
+      });
+    if (error) console.error("Report DB Error:", error.message);
+  },
+
+  async deleteProfile(email: string): Promise<void> {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('email', email);
+    if (error) throw new Error(`Deletion Error: ${error.message}`);
+  },
+
   async fetchProfile(email: string): Promise<UserProfile | null> {
     if (!supabase) return null;
-
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('email', email)
       .single();
-
     if (error || !data) return null;
-
     return {
       id: data.id,
       fullName: data.full_name,
@@ -82,6 +99,8 @@ export const dbService = {
       hasResidentPermit: data.has_resident_permit,
       hasLoadingZonePermit: data.has_loading_zone_permit,
       hasBusinessPermit: data.has_business_permit,
+      hasBusPermit: data.has_bus_permit,
+      hasTaxiPermit: data.has_taxi_permit,
       residentArea: data.resident_area,
       lastSynced: new Date(data.last_synced).getTime()
     };

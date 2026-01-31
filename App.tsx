@@ -36,7 +36,7 @@ const App: React.FC = () => {
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [lastAcceptedDate, setLastAcceptedDate] = useState<string | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
   const [state, setState] = useState<AppState>({
     image: null,
@@ -52,6 +52,8 @@ const App: React.FC = () => {
       hasResidentPermit: false,
       hasLoadingZonePermit: false,
       hasBusinessPermit: false,
+      hasBusPermit: false,
+      hasTaxiPermit: false,
       residentArea: '',
     }
   });
@@ -121,13 +123,10 @@ const App: React.FC = () => {
   };
 
   const saveProfile = async (profile: UserProfile) => {
-    setIsSyncing(true);
+    setIsSaving(true);
     try {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
       setState(prev => ({ ...prev, profile }));
-      const syncedProfile = await dbService.saveProfile(profile);
-      setState(prev => ({ ...prev, profile: syncedProfile }));
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(syncedProfile));
 
       if (!localStorage.getItem(ONBOARDING_KEY)) {
         const now = getFormattedDate();
@@ -139,11 +138,44 @@ const App: React.FC = () => {
       setShowOnboarding(false);
       setIsEditingProfile(false);
     } catch (error) {
-      console.error("Failed to sync profile:", error);
-      alert("Profile saved locally, but cloud sync failed.");
+      console.error("Failed to save profile:", error);
     } finally {
-      setIsSyncing(false);
+      setIsSaving(false);
     }
+  };
+
+  const handleDeleteProfile = () => {
+    // 1. Wipe all relevant storage
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(ONBOARDING_KEY);
+    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(LEGAL_ACCEPTED_KEY);
+    
+    // 2. Reset App State to default
+    setState({
+      image: null,
+      interpretation: null,
+      isLoading: false,
+      error: null,
+      history: [],
+      profile: {
+        fullName: '',
+        email: '',
+        vehicleNumber: '',
+        hasDisabilityPermit: false,
+        hasResidentPermit: false,
+        hasLoadingZonePermit: false,
+        hasBusinessPermit: false,
+        hasBusPermit: false,
+        hasTaxiPermit: false,
+        residentArea: '',
+      }
+    });
+    
+    // 3. Update navigation state to show onboarding from step 1
+    setShowOnboarding(true);
+    setIsEditingProfile(false);
+    setLastAcceptedDate(null);
   };
 
   const handleCancelEdit = () => {
@@ -253,9 +285,10 @@ const App: React.FC = () => {
     return (
       <Onboarding 
         onComplete={saveProfile} 
+        onDelete={handleDeleteProfile}
         onCancel={isEditingProfile ? handleCancelEdit : undefined}
         initialProfile={isEditingProfile ? state.profile : undefined}
-        isSyncing={isSyncing}
+        isSyncing={isSaving}
       />
     );
   }
@@ -361,7 +394,7 @@ const App: React.FC = () => {
           <div className="p-10 text-center flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Analysis Failed</h3>
             <p className="text-slate-500 mt-3 mb-10 font-medium leading-relaxed">{state.error}</p>
-            <button onClick={handleReset} className="bg-slate-900 text-white h-16 px-12 rounded-[24px] font-extrabold shadow-xl shadow-slate-200">Try Again</button>
+            <button onClick={handleReset} className="bg-slate-900 text-white h-16 px-12 rounded-[24px] font-extrabold shadow-xl shadow-slate-200 active:scale-95 transition-all">Try Again</button>
           </div>
         ) : state.interpretation && state.image ? (
           <div className="flex flex-col">
@@ -384,7 +417,7 @@ const App: React.FC = () => {
         <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center safe-pb">
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[320px] mx-auto mb-4">
                AI Guidance only. Users are solely responsible for their own parking and compliance.<br/>
-               Parking Sign Reader v{APP_VERSION} - Internet required
+               Parking Sign Reader v{APP_VERSION}
              </p>
              <div className="flex items-center justify-center gap-6">
                <button onClick={() => setShowLegal(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-600 underline decoration-2 underline-offset-4">Privacy & Terms</button>
@@ -403,6 +436,7 @@ const App: React.FC = () => {
       <AppSettingsModal 
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
+        userEmail={state.profile.email}
       />
 
       {/* How To Use Modal */}

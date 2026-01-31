@@ -14,6 +14,8 @@ export interface UserProfile {
   hasResidentPermit: boolean;
   hasLoadingZonePermit: boolean;
   hasBusinessPermit: boolean;
+  hasBusPermit: boolean;
+  hasTaxiPermit: boolean;
   residentArea?: string;
   lastSynced?: number;
 }
@@ -46,6 +48,19 @@ export interface HistoryItem {
   image: string;
   interpretation: ParkingInterpretation;
   feedback?: 'up' | 'down';
+}
+
+export interface ParkingReport {
+  id?: string;
+  userEmail: string;
+  issueCategory: string;
+  description: string;
+  aiSummary: string;
+  aiExplanation: string;
+  timestamp: number;
+  imageAttached: boolean;
+  imageData?: string;
+  source: 'Original' | 'Re-upload';
 }
 
 export interface AppState {

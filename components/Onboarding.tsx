@@ -3,13 +3,15 @@ import { UserProfile } from '../types';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
+  onDelete?: () => void;
   onCancel?: () => void;
   initialProfile?: UserProfile;
   isSyncing?: boolean;
 }
 
-const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialProfile, isSyncing }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(initialProfile ? 3 : 1);
+const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel, initialProfile, isSyncing }) => {
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(initialProfile ? 4 : 1);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(initialProfile || {
     fullName: '',
     email: '',
@@ -18,301 +20,165 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onCancel, initialPr
     hasResidentPermit: false,
     hasLoadingZonePermit: false,
     hasBusinessPermit: false,
+    hasBusPermit: false,
+    hasTaxiPermit: false,
     residentArea: '',
   });
   const [showError, setShowError] = useState(false);
 
   const validateEmail = (email: string) => {
-    return String(email)
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
+    return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
   };
 
-  const togglePermit = (key: keyof UserProfile) => {
-    if (typeof profile[key] === 'boolean') {
-      setProfile(prev => ({ ...prev, [key]: !prev[key] }));
-    }
-  };
-
-  const handleInputChange = (field: keyof UserProfile, value: string) => {
+  const handleInputChange = (field: keyof UserProfile, value: string | boolean) => {
     setProfile(prev => ({ ...prev, [field]: value }));
-    if (field === 'email' && validateEmail(value)) {
-      setShowError(false);
-    }
+    if (field === 'email' && typeof value === 'string' && validateEmail(value)) setShowError(false);
   };
-
-  const isEmailValid = !!validateEmail(profile.email);
 
   const handleComplete = () => {
-    if (!isEmailValid) {
+    if (!validateEmail(profile.email)) {
       setShowError(true);
       return;
     }
     onComplete(profile);
   };
 
+  const handleDelete = () => {
+    if (window.confirm("ARE YOU SURE?\n\nThis will permanently delete your local profile and history, and return you to the start screen.")) {
+      if (onDelete) {
+        onDelete();
+      }
+      // Revert to start
+      setStep(1);
+      setProfile({
+        fullName: '',
+        email: '',
+        vehicleNumber: '',
+        hasDisabilityPermit: false,
+        hasResidentPermit: false,
+        hasLoadingZonePermit: false,
+        hasBusinessPermit: false,
+        hasBusPermit: false,
+        hasTaxiPermit: false,
+        residentArea: '',
+      });
+    }
+  };
+
   if (step === 1) {
     return (
-      <div className="fixed inset-0 z-[200] bg-white flex flex-col p-6 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-fade-in overflow-hidden">
-        {/* Header Section */}
-        <div className="flex flex-col items-center text-center mt-10 shrink-0">
-          <div className="relative mb-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center filter drop-shadow-lg">
-               <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                  <path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" stroke-width="4"/>
-                  <circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" stroke-width="4"/>
-                  <circle cx="50" cy="35" r="20" fill="#A7F3D0" stroke="black" stroke-width="4"/>
-                  <text x="50" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="black">P</text>
-               </svg>
-            </div>
-            <div className="absolute -top-1 -right-4 bg-slate-900 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">
-              Official
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <h1 className="text-[32px] sm:text-[38px] font-black text-slate-900 leading-[0.9] tracking-tight">
-              Parking Logic, <span className="text-emerald-500">Solved.</span>
-            </h1>
-            <p className="text-slate-500 font-medium leading-snug px-4 text-xs sm:text-sm">
-              Decode complex Australian parking signs in seconds using high-precision Vision AI.
-            </p>
-          </div>
+      <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 items-center text-center justify-center animate-fade-in">
+        <div className="w-24 h-24 mb-8 bg-emerald-50 rounded-full flex items-center justify-center">
+           <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" stroke-width="4"/><circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" stroke-width="4"/><text x="50" y="44" text-anchor="middle" font-weight="900" font-size="26" fill="black">P</text></svg>
         </div>
-
-        {/* Steps Section */}
-        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full py-2 sm:py-4 overflow-hidden">
-          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 mb-2.5 shrink-0">How it works</h2>
-          
-          <div className="grid grid-cols-1 gap-2 sm:gap-2.5 w-full overflow-y-auto scrollbar-hide">
-            <div className="bg-slate-50 p-3 sm:p-4 rounded-[20px] sm:rounded-[24px] border border-slate-100 flex items-center gap-3 sm:gap-4">
-               <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm shrink-0 text-emerald-500">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-               </div>
-               <div className="flex flex-col">
-                 <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 1</span>
-                 <p className="font-bold text-slate-800 text-sm leading-tight">Take a photo of a sign</p>
-               </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 sm:p-4 rounded-[20px] sm:rounded-[24px] border border-slate-100 flex items-center gap-3 sm:gap-4">
-               <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm shrink-0 text-emerald-500">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-               </div>
-               <div className="flex flex-col">
-                 <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 2</span>
-                 <p className="font-bold text-slate-800 text-sm leading-tight">Instant AI Interpretation</p>
-               </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 sm:p-4 rounded-[20px] sm:rounded-[24px] border border-slate-100 flex items-center gap-3 sm:gap-4">
-               <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shadow-sm shrink-0 text-emerald-500">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-               </div>
-               <div className="flex flex-col">
-                 <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Step 3</span>
-                 <p className="font-bold text-slate-800 text-sm leading-tight">Exemptions for your permits</p>
-               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Section */}
-        <div className="max-w-sm mx-auto w-full pt-0 mb-6 shrink-0">
-          <button 
-            onClick={() => setStep(2)}
-            className="w-full bg-slate-900 text-white h-16 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg"
-          >
-            Get Started
-          </button>
-        </div>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-4">Parking Logic, <span className="text-emerald-500">Solved.</span></h1>
+        <p className="text-slate-500 font-medium max-w-xs mb-10">Instant AI-powered interpretation for Australian parking signs.</p>
+        <button onClick={() => setStep(2)} className="w-full max-w-sm bg-slate-900 text-white h-16 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">Get Started</button>
       </div>
     );
   }
 
   if (step === 2) {
     return (
-      <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-fade-in overflow-hidden">
-        <div className="flex-1 flex flex-col max-w-md mx-auto w-full overflow-hidden mt-10">
-          <div className="mb-6">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Privacy & Terms</h2>
-            <p className="text-slate-500 font-medium mt-1 leading-snug">Essential safety & usage information.</p>
+      <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 pt-20 animate-fade-in overflow-hidden">
+        <h2 className="text-3xl font-black text-slate-900 mb-2">Privacy & Support</h2>
+        <p className="text-slate-500 font-medium mb-8">Data Disclosure</p>
+        <div className="flex-1 overflow-y-auto space-y-6 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-6 scrollbar-hide">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl shrink-0 flex items-center justify-center"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
+            <div><p className="font-black text-slate-900 uppercase text-[10px] tracking-widest mb-1">Support & Identification</p><p>We collect your <b>Name and Email</b> strictly to personalize your reports and identify feedback you send to the developer team.</p></div>
           </div>
-          
-          <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-slate-600 leading-relaxed scrollbar-hide border-t border-slate-100 pt-6">
-            <section>
-              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Guidance Only Disclaimer</h3>
-              <p>Parking Sign Reader is an assistive tool designed for informational guidance. AI models can and do make mistakes, misinterpret visual data, or fail to account for temporary local restrictions.</p>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">User Responsibility</h3>
-              <p>You remain solely responsible for your vehicle and all parking decisions. You must manually verify all physical signs. Parking Sign Reader is not liable for any fines or infringements.</p>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Connectivity</h3>
-              <p>This service requires a stable internet connection to process data through our AI engines.</p>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Privacy</h3>
-              <p>We value your privacy. Your camera feed is used temporarily to provide the interpretation service. Images are not stored permanently by us.</p>
-            </section>
+          <div className="flex gap-4">
+            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl shrink-0 flex items-center justify-center"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg></div>
+            <div><p className="font-black text-slate-900 uppercase text-[10px] tracking-widest mb-1">Local Council Rules</p><p>We use your <b>GPS coordinates</b> to identify specific council parking rules. This happens only during an active scan and is never stored permanently.</p></div>
           </div>
-
-          <div className="mt-8 pt-6 border-t border-slate-100 mb-6">
-            <button 
-              onClick={() => setStep(3)}
-              className="w-full bg-emerald-600 text-white h-16 rounded-[24px] font-black shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 text-lg"
-            >
-              <span>Accept & Continue</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
+          <div className="flex gap-4">
+            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl shrink-0 flex items-center justify-center"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+            <div><p className="font-black text-slate-900 uppercase text-[10px] tracking-widest mb-1">Data Control</p><p>All permit data is stored locally on your device. You can clear your data at any time via the <b>Settings</b> menu.</p></div>
           </div>
+        </div>
+        <div className="mt-8 pt-6 border-t border-slate-100 mb-6 flex flex-col gap-4">
+          <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer active:bg-slate-100 transition-colors">
+            <input type="checkbox" checked={privacyAgreed} onChange={() => setPrivacyAgreed(!privacyAgreed)} className="w-6 h-6 rounded border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+            <span className="text-xs font-bold text-slate-700">I consent to the usage of my data as described.</span>
+          </label>
+          <button onClick={() => setStep(3)} disabled={!privacyAgreed} className="w-full bg-emerald-600 text-white h-16 rounded-2xl font-black shadow-xl disabled:opacity-50 transition-all text-lg active:scale-95">Continue</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 pt-20 animate-fade-in overflow-hidden">
+        <h2 className="text-3xl font-black text-slate-900 mb-2">Legal Disclaimer</h2>
+        <p className="text-slate-500 font-medium mb-8">Usage Guidelines</p>
+        <div className="flex-1 overflow-y-auto space-y-6 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-6 scrollbar-hide">
+          <p>This app is for <b>guidance only</b>. AI can misinterpret signs or miss temporary restrictions (e.g., roadworks). <b>You are solely responsible</b> for any parking fines incurred.</p>
+          <p>Always verify the physical sign yourself. By continuing, you agree that the developer is not liable for infringements.</p>
+        </div>
+        <div className="mt-8 pt-6 border-t border-slate-100 mb-6">
+          <button onClick={() => setStep(4)} className="w-full bg-slate-900 text-white h-16 rounded-2xl font-black shadow-xl text-lg active:scale-95 transition-all">Accept & Setup Profile</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-fade-in max-w-md mx-auto overflow-hidden">
-      {initialProfile && onCancel && (
-        <button 
-          onClick={onCancel}
-          disabled={isSyncing}
-          className="absolute top-[calc(env(safe-area-inset-top)+24px)] right-6 p-2 text-slate-400 hover:text-slate-900 transition-colors z-[210] disabled:opacity-30"
-          aria-label="Cancel editing"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide mt-10">
-        <div className="space-y-2 mb-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">User Profile</h2>
-            {profile.lastSynced && !isSyncing && (
-              <div className="flex items-center gap-1 text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md">
-                <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" /></svg>
-                Cloud Synced
-              </div>
-            )}
-          </div>
-          <p className="text-slate-500 font-medium">Your identification and vehicle details.</p>
-        </div>
-
+    <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 pt-20 animate-fade-in max-w-md mx-auto overflow-hidden">
+      {onCancel && <button onClick={onCancel} className="absolute top-8 right-6 p-2 text-slate-400"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></button>}
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
+        <h2 className="text-3xl font-black text-slate-900 mb-2">{initialProfile ? 'Edit Profile' : 'User Profile'}</h2>
+        <p className="text-slate-500 font-medium mb-8">Identify yourself for support requests.</p>
         <div className="space-y-4 mb-10">
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Full Name</label>
-            <input 
-              type="text"
-              placeholder="e.g. Sarah Jenkins"
-              value={profile.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
-              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block flex items-center gap-1.5">
-              Email Address <span className="text-rose-500 font-black">*</span>
-            </label>
-            <input 
-              type="email"
-              placeholder="e.g. sarah@example.com"
-              value={profile.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className={`w-full p-4 rounded-xl border-2 bg-slate-50 focus:bg-white outline-none transition-all font-bold text-slate-900 ${showError && !isEmailValid ? 'border-rose-500' : 'border-slate-100 focus:border-emerald-500'}`}
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Vehicle Registration</label>
-            <input 
-              type="text"
-              placeholder="e.g. XYZ-789"
-              value={profile.vehicleNumber}
-              onChange={(e) => handleInputChange('vehicleNumber', e.target.value)}
-              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
-            />
-          </div>
+          <div><label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Full Name</label><input type="text" placeholder="Sarah Jenkins" value={profile.fullName} onChange={(e) => handleInputChange('fullName', e.target.value)} className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 font-bold outline-none focus:border-emerald-500 transition-colors" /></div>
+          <div><label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Email Address *</label><input type="email" placeholder="sarah@example.com" value={profile.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`w-full p-4 rounded-xl border-2 bg-slate-50 font-bold outline-none transition-colors ${showError && !validateEmail(profile.email) ? 'border-rose-500' : 'border-slate-100 focus:border-emerald-500'}`} /></div>
+          <div><label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Vehicle Registration</label><input type="text" placeholder="XYZ-789" value={profile.vehicleNumber} onChange={(e) => handleInputChange('vehicleNumber', e.target.value)} className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 font-bold outline-none focus:border-emerald-500 transition-colors" /></div>
         </div>
-
-        <div className="space-y-2 mb-6">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Active Permits</h2>
-          <p className="text-slate-500 font-medium">Manage your parking exemptions here.</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
+        <h3 className="text-xl font-black text-slate-900 mb-4">Permits</h3>
+        <div className="grid gap-3 pb-8">
           {[
-            { id: 'hasDisabilityPermit', label: 'Disability Permit (MPS)', icon: '♿' },
+            { id: 'hasDisabilityPermit', label: 'Disability Permit', icon: '♿' },
             { id: 'hasResidentPermit', label: 'Resident Permit', icon: '🏠' },
-            { id: 'hasLoadingZonePermit', label: 'Loading Zone Permit', icon: '🚛' },
+            { id: 'hasLoadingZonePermit', label: 'Loading Zone Permit', icon: '📦' },
             { id: 'hasBusinessPermit', label: 'Business Permit', icon: '💼' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => togglePermit(item.id as keyof UserProfile)}
-              className={`p-5 rounded-2xl border-2 transition-all flex items-center gap-4 text-left ${
-                profile[item.id as keyof UserProfile] 
-                  ? 'border-emerald-500 bg-emerald-50 shadow-sm' 
-                  : 'border-slate-100 bg-slate-50/50'
-              }`}
-            >
-              <span className="text-2xl">{item.icon}</span>
-              <span className="font-bold text-slate-900">{item.label}</span>
-              <div className="ml-auto">
-                {profile[item.id as keyof UserProfile] ? (
-                  <div className="bg-emerald-500 rounded-full p-1">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                ) : (
-                  <div className="w-6 h-6 rounded-full border-2 border-slate-200" />
-                )}
-              </div>
+            { id: 'hasBusPermit', label: 'Bus / Auth. Vehicle', icon: '🚌' },
+            { id: 'hasTaxiPermit', label: 'Taxi Permit', icon: '🚕' },
+          ].map(item => (
+            <button key={item.id} onClick={() => handleInputChange(item.id as keyof UserProfile, !profile[item.id as keyof UserProfile])} className={`p-4 rounded-2xl border-2 flex items-center gap-4 text-left transition-all active:scale-[0.98] ${profile[item.id as keyof UserProfile] ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-white'}`}>
+              <span className="text-xl">{item.icon}</span><span className="font-bold flex-1">{item.label}</span>
+              {profile[item.id as keyof UserProfile] && <div className="bg-emerald-500 rounded-full p-1"><svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></div>}
             </button>
           ))}
+          {profile.hasResidentPermit && (
+            <div className="animate-fade-in">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Resident Area / Zone</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Area 5 or Zone B" 
+                value={profile.residentArea} 
+                onChange={(e) => handleInputChange('residentArea', e.target.value)} 
+                className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 font-bold outline-none focus:border-emerald-500 transition-colors" 
+              />
+            </div>
+          )}
         </div>
 
-        {profile.hasResidentPermit && (
-          <div className="mt-6 animate-fade-in pb-10">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Resident Area / Zone</label>
-            <input 
-              type="text"
-              placeholder="e.g. Area 12"
-              value={profile.residentArea}
-              onChange={(e) => handleInputChange('residentArea', e.target.value)}
-              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900"
-            />
-          </div>
+        {initialProfile && (
+           <div className="pt-6 border-t border-slate-100 pb-10">
+              <button 
+                onClick={handleDelete}
+                className="w-full text-rose-500 border-2 border-rose-100 bg-rose-50/30 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-rose-50 active:scale-95"
+              >
+                Delete Profile
+              </button>
+              <p className="text-center text-[9px] font-medium text-slate-400 mt-3 uppercase tracking-wider">Warning: This action clears all your data.</p>
+           </div>
         )}
       </div>
-
-      <div className="mt-6 pt-4 border-t border-slate-100 shrink-0 space-y-3 mb-6">
-        <button 
-          onClick={handleComplete}
-          disabled={!isEmailValid || isSyncing}
-          className={`w-full h-16 rounded-[24px] font-black shadow-xl active:scale-95 transition-all text-lg flex items-center justify-center gap-3 ${isEmailValid ? 'bg-slate-900 text-white shadow-emerald-200/50' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
-        >
-          {isSyncing ? 'Syncing...' : (initialProfile ? 'Save Changes' : 'Complete Setup')}
-        </button>
-        {initialProfile && onCancel && (
-          <button 
-            onClick={onCancel}
-            disabled={isSyncing}
-            className="w-full text-slate-400 py-2 rounded-xl font-bold text-sm active:scale-95 transition-all uppercase tracking-widest disabled:opacity-30"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
+      <button onClick={handleComplete} disabled={!validateEmail(profile.email) || isSyncing} className="w-full bg-slate-900 text-white h-16 rounded-2xl font-black shadow-xl mt-6 disabled:opacity-50 shrink-0 active:scale-95 transition-all">
+        {isSyncing ? 'Saving...' : initialProfile ? 'Save' : 'Finish Setup'}
+      </button>
     </div>
   );
 };
