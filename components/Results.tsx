@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types';
-import { dbService } from '../services/dbService';
+import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types.ts';
+import { dbService } from '../services/dbService.ts';
 
 interface ResultsProps {
   data: ParkingInterpretation;
@@ -22,6 +22,7 @@ const Results: React.FC<ResultsProps> = ({
   onFeedback,
   isRechecking,
   initialFeedback,
+  scanTimestamp,
   profile
 }) => {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(initialFeedback || null);
@@ -31,10 +32,21 @@ const Results: React.FC<ResultsProps> = ({
   const [isSendingReport, setIsSendingReport] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
-  const [activeIdx] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   const activeResult: DirectionalResult = data.results[activeIdx] || data.results[0];
   const isAllowed = activeResult?.canParkNow;
+
+  const formattedTimestamp = scanTimestamp 
+    ? new Date(scanTimestamp).toLocaleString('en-AU', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      })
+    : null;
 
   const handleFeedback = (type: 'up' | 'down') => {
     setFeedback(type);
@@ -44,11 +56,9 @@ const Results: React.FC<ResultsProps> = ({
   const handleSendReport = async () => {
     setIsSendingReport(true);
     setReportError(null);
-    // standard Access Key for demo purposes
     const WEB3FORMS_ACCESS_KEY = "af4bf796-f781-401e-ad3c-f6668d08fa52"; 
 
     try {
-      // 1. Log to database (local or supabase) including the image
       await dbService.saveReport({
         userEmail: profile?.email || 'anonymous',
         issueCategory: reportIssue,
@@ -57,47 +67,26 @@ const Results: React.FC<ResultsProps> = ({
         aiExplanation: activeResult.explanation,
         timestamp: Date.now(),
         imageAttached: true,
-        imageData: image, // Store the captured image
+        imageData: image,
         source: 'Original'
       });
 
-      // 2. Submit text-only report via JSON fetch to avoid "Pro" file errors
-      // We include the image base64 as a string field in the JSON body
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           access_key: WEB3FORMS_ACCESS_KEY,
           subject: `Parking Issue: ${reportIssue}`,
           from_name: profile?.fullName || "App User",
           from_email: profile?.email || "support@auspark.ai",
-          message: `
-            User: ${profile?.fullName || 'Anonymous User'}
-            User Email: ${profile?.email || 'Anonymous'}
-            Issue Category: ${reportIssue}
-            
-            Description:
-            ${reportDescription}
-            
-            AI Result Info:
-            Summary: ${activeResult.summary}
-            Allowed: ${activeResult.canParkNow ? "YES" : "NO"}
-            Logic: ${activeResult.explanation}
-            Timestamp: ${new Date().toLocaleString('en-AU')}
-          `,
-          captured_image: image // Included as a text string field
+          message: `User: ${profile?.fullName || 'Anonymous'}\nIssue: ${reportIssue}\n\nDescription:\n${reportDescription}\n\nAI Summary: ${activeResult.summary}`,
+          captured_image: image
         }),
       });
       
       const json = await res.json();
-      if (json.success) {
-        setReportSuccess(true);
-      } else {
-        throw new Error(json.message || "Submission failed");
-      }
+      if (json.success) setReportSuccess(true);
+      else throw new Error(json.message || "Submission failed");
     } catch (err: any) {
       setReportError(err.message || "Failed to transmit report.");
     } finally {
@@ -115,87 +104,173 @@ const Results: React.FC<ResultsProps> = ({
     }, 300);
   };
 
+  const getDirectionLabel = (dir: string) => {
+    switch (dir) {
+      case 'left': return 'Left Arrow ←';
+      case 'right': return 'Right Arrow →';
+      default: return 'General Rules';
+    }
+  };
+
   return (
-    <div className="p-5 space-y-8 w-full max-w-lg mx-auto pb-32 animate-fade-in overflow-x-hidden">
-      <div className="relative overflow-hidden rounded-[32px] border border-slate-200 shadow-2xl bg-slate-900 ring-4 ring-white">
-        <img src={image} alt="Sign" className="w-full max-h-[42vh] object-contain mx-auto" />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex justify-between items-end">
-           <span className="text-white/60 text-[9px] font-black uppercase tracking-[0.2em]">Vision AI scan</span>
-           {onRecheck && (
-             <button onClick={onRecheck} disabled={isRechecking} className="bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-emerald-400 active:scale-95 transition-all flex items-center gap-2 shadow-lg whitespace-nowrap">
-               <svg className={`w-3.5 h-3.5 ${isRechecking ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15" /></svg>
-               {isRechecking ? 'Processing...' : 'Re-Check'}
-             </button>
+    <div className="flex flex-col flex-1 animate-fade-in bg-white">
+      {/* Contextual Image Preview */}
+      <div className="relative w-full aspect-video bg-slate-900 border-b border-slate-200 overflow-hidden shrink-0">
+        <img src={image} alt="Target Sign" className="w-full h-full object-contain" />
+        <div className="absolute top-6 left-6 flex flex-col gap-2">
+           <div className="bg-slate-900/60 backdrop-blur-xl border border-white/20 px-3 py-1.5 rounded-full inline-flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-white text-[10px] font-black uppercase tracking-[0.1em]">Vision Analysis</span>
+           </div>
+           {formattedTimestamp && (
+             <span className="text-white/60 text-[9px] font-bold px-1">{formattedTimestamp}</span>
            )}
         </div>
+        {onRecheck && (
+           <button 
+             onClick={onRecheck} 
+             disabled={isRechecking} 
+             className="absolute bottom-6 right-6 bg-white/10 backdrop-blur-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl active:scale-95 transition-all flex items-center gap-2 shadow-2xl"
+           >
+             <svg className={`w-4 h-4 ${isRechecking ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15" /></svg>
+             {isRechecking ? 'Syncing...' : 'Re-Check'}
+           </button>
+        )}
       </div>
 
-      <div className={`p-8 rounded-[32px] border shadow-2xl transition-all relative overflow-hidden ${isAllowed ? 'bg-white border-emerald-100 ring-8 ring-emerald-50/50' : 'bg-white border-rose-100 ring-8 ring-rose-50/50'}`}>
-        <div className="flex items-start justify-between mb-8">
-          <div className="flex-1 min-w-0 pr-4">
-            <h2 className={`text-[36px] sm:text-[42px] font-black tracking-tighter leading-none mb-3 ${isAllowed ? 'text-emerald-950' : 'text-rose-950'}`}>
-              {isAllowed ? 'GO AHEAD' : 'STOP'}
-            </h2>
-            <p className="text-slate-500 font-black uppercase text-[12px] tracking-widest">{activeResult.summary}</p>
-          </div>
-          <div className={`p-6 rounded-[24px] shadow-2xl ${isAllowed ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-             {isAllowed ? <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg> : <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>}
-          </div>
-        </div>
-        <div className="bg-slate-50/80 p-5 rounded-[24px] border border-slate-100 italic text-sm font-bold text-slate-800 leading-relaxed">"{activeResult.explanation}"</div>
-      </div>
-
-      <div className="flex items-center gap-4 pt-4">
-        <div className="flex gap-2">
-          <button onClick={() => handleFeedback('up')} className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all ${feedback === 'up' ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-100 text-slate-300'}`} title="Helpful Result"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z" /></svg></button>
-          <button onClick={() => handleFeedback('down')} className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all ${feedback === 'down' ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white border-slate-100 text-slate-300'}`} title="Incorrect Result"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.106-1.79l-.05-.025A4 4 0 0011.057 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 00-1-1v-.667a4 4 0 01.8-2.4l1.4-1.867a1.5 1.5 0 00.8-.2z" /></svg></button>
-          <button onClick={() => setShowReportModal(true)} className="w-14 h-14 rounded-2xl border-2 bg-white border-slate-100 text-slate-300 flex items-center justify-center transition-colors hover:border-rose-200 hover:text-rose-400" title="Report Issue"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></button>
-        </div>
-        <button onClick={onReset} className="flex-1 bg-slate-900 text-white h-14 rounded-2xl font-black uppercase text-sm active:scale-[0.98] transition-all">Scan Another</button>
-      </div>
-
-      {showReportModal && (
-        <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeReportModal} />
-          <div className="relative bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[90vh]">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
-              <h2 className="text-xl font-black text-slate-900 text-center flex-1 ml-8">{reportSuccess ? 'Success' : 'Report Issue'}</h2>
-              <button onClick={closeReportModal} className="p-2 text-slate-400 hover:bg-slate-200 rounded-full"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></button>
+      {/* Decision Content */}
+      <div className="flex-1 -mt-10 bg-white rounded-t-[48px] px-8 pt-10 pb-8 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] relative z-20">
+        <div className="max-w-md mx-auto">
+          
+          {/* Directional Tabs if multiple results exist - "Fatter" slices */}
+          {data.results.length > 1 && (
+            <div className="flex bg-slate-100 p-1.5 rounded-[24px] mb-8">
+              {data.results.map((res, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveIdx(idx)}
+                  className={`flex-1 py-5 px-2 rounded-[18px] text-[11px] font-black uppercase tracking-widest transition-all ${activeIdx === idx ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400'}`}
+                >
+                  {getDirectionLabel(res.direction)}
+                </button>
+              ))}
             </div>
-            <div className="p-8 space-y-6 overflow-y-auto scrollbar-hide">
+          )}
+
+          <div className="flex items-start justify-between mb-8">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-1">
+                 {activeResult.direction === 'left' && <span className="text-2xl leading-none">←</span>}
+                 {activeResult.direction === 'right' && <span className="text-2xl leading-none">→</span>}
+                 <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.15em]">{getDirectionLabel(activeResult.direction)}</p>
+              </div>
+              <h2 className={`text-6xl font-black tracking-tighter leading-none ${isAllowed ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {isAllowed ? 'ALLOWED' : 'NOPE'}
+              </h2>
+              <p className="text-slate-400 font-black uppercase text-xs tracking-[0.15em]">{activeResult.summary}</p>
+            </div>
+            <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl ${isAllowed ? 'bg-emerald-500 shadow-emerald-200' : 'bg-rose-500 shadow-rose-200'}`}>
+               {isAllowed ? (
+                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
+               ) : (
+                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M6 18L18 6M6 6l12 12" /></svg>
+               )}
+            </div>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-100 p-8 rounded-[36px] mb-8 relative">
+             <div className="absolute -top-3 left-8 bg-slate-900 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Interpretation</div>
+             <p className="text-slate-900 font-bold text-lg leading-snug italic">
+               "{activeResult.explanation}"
+             </p>
+          </div>
+
+          <div className="space-y-3 mb-10">
+            <h4 className="text-[10px] font-black uppercase text-slate-300 tracking-[0.2em] px-2 mb-4">Detected Rules</h4>
+            {activeResult.rules.map((rule, idx) => (
+              <div key={idx} className="flex items-start gap-4 bg-white border border-slate-100 p-5 rounded-3xl shadow-sm">
+                 <div className="w-6 h-6 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                 </div>
+                 <p className="text-sm font-bold text-slate-600 leading-tight">{rule}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Result Actions Area - Above the Global Footer - "Fatter" buttons */}
+          <div className="flex items-center gap-4 py-8 border-t border-slate-100">
+             <div className="flex gap-2">
+                <button 
+                  onClick={() => handleFeedback('up')} 
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-sm ${feedback === 'up' ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-300 border border-slate-100'}`}
+                  aria-label="Helpful"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z" /></svg>
+                </button>
+                <button 
+                  onClick={() => setShowReportModal(true)}
+                  className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 text-slate-300 flex items-center justify-center active:scale-90 transition-all shadow-sm"
+                  aria-label="Report"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </button>
+             </div>
+             <button 
+              onClick={onReset} 
+              className="flex-1 bg-slate-900 text-white h-20 rounded-[32px] font-black text-lg shadow-xl active:scale-95 transition-all tracking-tight"
+             >
+               Scan Another
+             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-[10000] grid place-items-center p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={closeReportModal} />
+          <div className="relative bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[90vh]">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{reportSuccess ? 'Success' : 'Report Issue'}</h2>
+              <button onClick={closeReportModal} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div className="p-10 space-y-8 overflow-y-auto scrollbar-hide">
               {reportSuccess ? (
-                <div className="text-center py-10">
-                   <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6"><svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></div>
-                   <h3 className="text-2xl font-black text-slate-900">Report Sent</h3>
-                   <p className="text-slate-500 mt-2 font-medium">Thank you! Our logic team will review this case shortly.</p>
-                   <button onClick={closeReportModal} className="mt-8 w-full bg-slate-900 text-white h-14 rounded-2xl font-black active:scale-95 transition-all">Close</button>
+                <div className="text-center py-4">
+                   <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[36px] flex items-center justify-center mx-auto mb-8 shadow-inner"><svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg></div>
+                   <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Report Submitted</h3>
+                   <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">Our engineering team will review this interpretation to improve our logic engine.</p>
+                   <button onClick={closeReportModal} className="mt-10 w-full bg-slate-900 text-white h-20 rounded-[32px] font-black active:scale-95 transition-all">Back to Results</button>
                 </div>
               ) : (
                 <>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Category</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {["Incorrect logic", "Sign not found", "Rules misread", "Other"].map(label => (
-                      <button key={label} onClick={() => setReportIssue(label)} className={`p-4 rounded-2xl border-2 font-bold text-xs transition-all ${reportIssue === label ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-500'}`}>{label}</button>
+                    {["Logic error", "Can't find sign", "Rules misread", "Other"].map(label => (
+                      <button key={label} onClick={() => setReportIssue(label)} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center text-center ${reportIssue === label ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-400'}`}>{label}</button>
                     ))}
                   </div>
                   
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 mt-4">Details</p>
                   <textarea 
-                    placeholder="Briefly describe what's wrong with the interpretation..." 
+                    placeholder="Describe the interpretation error..." 
                     value={reportDescription} 
                     onChange={(e) => setReportDescription(e.target.value)} 
-                    className="w-full h-36 p-4 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" 
+                    className="w-full h-40 p-6 rounded-[32px] border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-sm resize-none" 
                   />
                   
-                  {reportError && <p className="text-rose-500 text-[10px] font-bold uppercase text-center">{reportError}</p>}
+                  {reportError && <p className="text-rose-500 text-[11px] font-black uppercase text-center">{reportError}</p>}
+                  
+                  {/* Image Sharing Notice */}
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center px-4 leading-relaxed">
+                    Notice: Your captured image and profile name will be sent to our team to help improve AI accuracy.
+                  </p>
+
                   <button 
                     onClick={handleSendReport} 
                     disabled={isSendingReport || !reportIssue || !reportDescription.trim()} 
-                    className="w-full bg-slate-900 text-white h-16 rounded-2xl font-black disabled:opacity-50 mt-4 shadow-lg active:scale-95 transition-all"
+                    className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black disabled:opacity-30 shadow-xl active:scale-95 transition-all text-lg tracking-tight"
                   >
-                    {isSendingReport ? 'Transmitting...' : 'Send Report'}
+                    {isSendingReport ? 'Transmitting...' : 'Submit Report'}
                   </button>
-                  <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-wider">Note: The captured image is attached to this report.</p>
                 </>
               )}
             </div>

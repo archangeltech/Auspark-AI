@@ -50,89 +50,106 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full">
-      <div className="w-full aspect-[3/4] rounded-[32px] border-2 border-dashed border-slate-300 bg-white/50 backdrop-blur-sm flex flex-col items-center justify-center text-center p-8 transition-all hover:border-emerald-400 hover:bg-emerald-50/30 relative shadow-sm">
-        <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center shadow-xl mb-8 border border-slate-100 ring-8 ring-slate-50 shrink-0">
-          <svg className="w-12 h-12 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
+    <div className="flex flex-col items-center w-full max-w-md mx-auto animate-fade-in">
+      {/* Viewfinder Container */}
+      <div className="relative w-full aspect-[4/5] rounded-[48px] overflow-hidden bg-slate-900 shadow-2xl group border-[6px] border-white ring-1 ring-slate-200">
         
-        <div className="space-y-2 shrink-0">
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight">Select Parking Sign</h3>
-          <p className="text-sm text-slate-500 font-medium px-4 leading-relaxed">Capture a live photo or upload from your gallery for instant analysis.</p>
+        {/* Viewfinder Brackets */}
+        <div className="absolute inset-10 pointer-events-none z-10">
+          <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-500/80 rounded-tl-2xl" />
+          <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-500/80 rounded-tr-2xl" />
+          <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-emerald-500/80 rounded-bl-2xl" />
+          <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-emerald-500/80 rounded-br-2xl" />
+          
+          {/* Animated Scanning Line */}
+          {isLoading && (
+            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.8)] animate-[scan_2s_linear_infinite] rounded-full z-20" />
+          )}
         </div>
-        
-        <div className="mt-10 w-full space-y-4 px-2 shrink-0">
-          <button
-            onClick={triggerCamera}
-            disabled={isLoading}
-            className="w-full bg-slate-900 text-white h-16 rounded-[20px] font-black flex items-center justify-center gap-3 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-slate-200"
-          >
-            {isLoading ? (
-              <svg className="animate-spin h-6 w-6 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <div className="flex items-center justify-center gap-3">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                </svg>
-                <span className="text-base">Take Photo</span>
-              </div>
-            )}
-          </button>
 
-          <button
+        {/* Backdrop Visuals */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-12 text-center">
+           <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-[32px] flex items-center justify-center mb-8 ring-1 ring-white/10 shadow-inner">
+              <svg className="w-12 h-12 text-emerald-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+           </div>
+           <p className="text-white font-black text-2xl tracking-tighter mb-2">Ready to Decode</p>
+           <p className="text-slate-400 text-xs font-bold leading-relaxed max-w-[200px]">Center the parking sign within the brackets for AI precision.</p>
+        </div>
+
+        {/* Shutter Bar Interface */}
+        <div className="absolute bottom-0 inset-x-0 p-8 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent">
+          {/* Gallery Access */}
+          <button 
             onClick={triggerGallery}
-            disabled={isLoading}
-            className="w-full bg-white text-slate-900 border-2 border-slate-200 h-16 rounded-[20px] font-black flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-[0.98] disabled:opacity-50"
+            className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-xl"
+            aria-label="Gallery"
           >
-            <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="text-base">Gallery Upload</span>
+          </button>
+
+          {/* Main Camera Shutter */}
+          <button 
+            onClick={triggerCamera}
+            disabled={isLoading}
+            className="relative group flex items-center justify-center p-1 bg-white rounded-full shadow-2xl active:scale-90 transition-all"
+            aria-label="Take Photo"
+          >
+            <div className="w-[72px] h-[72px] border-[4px] border-slate-900 rounded-full flex items-center justify-center">
+               {isLoading ? (
+                 <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+               ) : (
+                 <div className="w-12 h-12 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
+               )}
+            </div>
+            {/* Pulsing ring */}
+            {!isLoading && <div className="absolute inset-0 rounded-full ring-4 ring-emerald-500/20 animate-pulse" />}
+          </button>
+
+          {/* Tips / Info */}
+          <button 
+            onClick={onShowHowToUse}
+            className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-xl"
+            aria-label="Help"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </button>
         </div>
       </div>
 
-      <button 
-        onClick={onShowHowToUse}
-        className="flex items-center gap-2.5 text-slate-400 hover:text-emerald-500 transition-colors py-3 px-5 rounded-2xl border border-slate-200 bg-white shadow-sm active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        How to scan correctly
-      </button>
-
-      <input
-        type="file"
-        ref={cameraInputRef}
-        onChange={handleFileChange}
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={galleryInputRef}
-        onChange={handleFileChange}
-        accept="image/*"
-        className="hidden"
-      />
-      
-      <div className="w-full max-w-sm px-2">
-        <div className="flex items-start gap-4 text-xs text-slate-500 font-medium bg-slate-100/50 p-5 rounded-[24px] border border-slate-100">
-           <svg className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-           </svg>
-           <p className="leading-relaxed">
-             Sign recognition optimized for all Australian states: <br/>
-             <span className="font-bold text-slate-700">NSW, VIC, QLD, WA, SA, TAS, ACT, NT.</span>
+      {/* State Support Badge */}
+      <div className="mt-10 w-full px-4">
+        <div className="flex items-center gap-4 bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm">
+           <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+             </svg>
+           </div>
+           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 leading-tight">
+             Optimized for <span className="text-slate-900">NSW, VIC, QLD, WA, SA, TAS, ACT, NT</span>
            </p>
         </div>
       </div>
+
+      {/* Hidden Inputs */}
+      <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
+      <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+      
+      <style>{`
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };

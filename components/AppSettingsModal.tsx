@@ -73,7 +73,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose, us
             )}
           </div>
         </div>
-        <div className="p-6 bg-slate-50 border-t border-slate-100 text-center"><p className="text-[10px] font-black uppercase text-slate-400">Parking Sign Reader v1.0.1</p></div>
+        <div className="p-6 bg-slate-50 border-t border-slate-100 text-center"><p className="text-[10px] font-black uppercase text-slate-400">Parking Sign Reader v1.0.2</p></div>
       </div>
     </div>
   );

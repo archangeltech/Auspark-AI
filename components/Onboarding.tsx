@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile } from '../types.ts';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
@@ -72,7 +72,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
         </div>
         <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-4">Parking Logic, <span className="text-emerald-500">Solved.</span></h1>
         <p className="text-slate-500 font-medium max-w-xs mb-10">Instant AI-powered interpretation for Australian parking signs.</p>
-        <button onClick={() => setStep(2)} className="w-full max-w-sm bg-slate-900 text-white h-16 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">Get Started</button>
+        <button onClick={() => setStep(2)} className="w-full max-w-sm bg-slate-900 text-white h-20 rounded-[32px] font-black text-lg shadow-xl active:scale-95 transition-all">Get Started</button>
       </div>
     );
   }
@@ -101,7 +101,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
             <input type="checkbox" checked={privacyAgreed} onChange={() => setPrivacyAgreed(!privacyAgreed)} className="w-6 h-6 rounded border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500" />
             <span className="text-xs font-bold text-slate-700">I consent to the usage of my data as described.</span>
           </label>
-          <button onClick={() => setStep(3)} disabled={!privacyAgreed} className="w-full bg-emerald-600 text-white h-16 rounded-2xl font-black shadow-xl disabled:opacity-50 transition-all text-lg active:scale-95">Continue</button>
+          <button onClick={() => setStep(3)} disabled={!privacyAgreed} className="w-full bg-emerald-600 text-white h-20 rounded-[32px] font-black shadow-xl disabled:opacity-50 transition-all text-lg active:scale-95">Continue</button>
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
           <p>Always verify the physical sign yourself. By continuing, you agree that the developer is not liable for infringements.</p>
         </div>
         <div className="mt-8 pt-6 border-t border-slate-100 mb-6">
-          <button onClick={() => setStep(4)} className="w-full bg-slate-900 text-white h-16 rounded-2xl font-black shadow-xl text-lg active:scale-95 transition-all">Accept & Setup Profile</button>
+          <button onClick={() => setStep(4)} className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black shadow-xl text-lg active:scale-95 transition-all">Accept & Setup Profile</button>
         </div>
       </div>
     );
@@ -166,7 +166,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
            <div className="pt-6 border-t border-slate-100 pb-10">
               <button 
                 onClick={handleDelete}
-                className="w-full text-rose-500 border-2 border-rose-100 bg-rose-50/30 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-rose-50 active:scale-95"
+                className="w-full text-rose-500 border-2 border-rose-100 bg-rose-50/30 h-20 rounded-[32px] font-black text-xs uppercase tracking-widest transition-all hover:bg-rose-50 active:scale-95"
               >
                 Delete Profile
               </button>
@@ -174,7 +174,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
            </div>
         )}
       </div>
-      <button onClick={handleComplete} disabled={!validateEmail(profile.email) || isSyncing} className="w-full bg-slate-900 text-white h-16 rounded-2xl font-black shadow-xl mt-6 disabled:opacity-50 shrink-0 active:scale-95 transition-all">
+      <button onClick={handleComplete} disabled={!validateEmail(profile.email) || isSyncing} className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black shadow-xl mt-6 disabled:opacity-50 shrink-0 active:scale-95 transition-all text-lg">
         {isSyncing ? 'Saving...' : initialProfile ? 'Save' : 'Finish Setup'}
       </button>
     </div>

@@ -82,7 +82,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, lastAcceptedDa
           ) : (
             <button 
               onClick={onAccept}
-              className="w-full bg-slate-900 text-white h-16 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all"
+              className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black text-lg shadow-lg active:scale-[0.98] transition-all"
             >
               I Accept the Terms
             </button>
