@@ -46,18 +46,23 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, lastAcceptedDa
           </section>
 
           <section>
-            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Connectivity & Availability</h3>
-            <p>This service <strong>requires a stable internet connection</strong> to process data through our AI engines. Performance depends on your device network being steady. We do not guarantee 100% uptime; the service may be occasionally unavailable due to maintenance or technical issues.</p>
+            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Data Privacy & Reporting</h3>
+            <p>We collect your <strong>Name and Email</strong> to personalize your experience and facilitate support. If you choose to "Report an Issue," your name and the captured image of the sign will be shared with our developers via email and secure database to help improve our logic engine.</p>
           </section>
 
           <section>
-            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Privacy & Data Handling</h3>
-            <p>We value your privacy. Your camera feed and location data are used temporarily to provide the interpretation service. Images are processed in real-time via Google Gemini and are not stored permanently by Parking Sign Reader. We do not track individuals or sell personal data to third parties.</p>
+            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Location & Permits</h3>
+            <p>During an active scan, we use your <strong>GPS coordinates</strong> to identify local council jurisdictions and specific parking rules. This location data is processed in real-time. Additionally, the app considers your locally stored <strong>Permit Status</strong> (Disability, Resident, Loading Zone, etc.) to provide accurate exemptions.</p>
           </section>
 
           <section>
-            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Compliance</h3>
-            <p>Designed for compliance with general Australian parking standards across all states (NSW, VIC, QLD, WA, SA, TAS, ACT, NT).</p>
+            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Data Control & Deletion</h3>
+            <p>You have full control over your data. You can edit your profile at any time. Selecting <strong>"Delete Profile"</strong> will permanently wipe your local history and account details from the device. To remove data submitted via reports, use the "Delete My Cloud Reports" option in the App Settings.</p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-2">Technical Requirements</h3>
+            <p>This service requires a stable internet connection to communicate with our AI engines. Performance is dependent on image quality; ensure signs are clear and well-lit for the best results.</p>
           </section>
         </div>
 

@@ -9,7 +9,6 @@ export interface UserProfile {
   id?: string;
   fullName: string;
   email: string;
-  vehicleNumber: string;
   hasDisabilityPermit: boolean;
   hasResidentPermit: boolean;
   hasLoadingZonePermit: boolean;

@@ -21,7 +21,6 @@ export const dbService = {
       .upsert({
         email: profile.email,
         full_name: profile.fullName,
-        vehicle_number: profile.vehicleNumber,
         has_disability_permit: profile.hasDisabilityPermit,
         has_resident_permit: profile.hasResidentPermit,
         has_loading_zone_permit: profile.hasLoadingZonePermit,
@@ -40,7 +39,6 @@ export const dbService = {
       id: data.id,
       fullName: data.full_name,
       email: data.email,
-      vehicleNumber: data.vehicle_number,
       hasDisabilityPermit: data.has_disability_permit,
       hasResidentPermit: data.has_resident_permit,
       hasLoadingZonePermit: data.has_loading_zone_permit,
@@ -94,7 +92,6 @@ export const dbService = {
       id: data.id,
       fullName: data.full_name,
       email: data.email,
-      vehicleNumber: data.vehicle_number,
       hasDisabilityPermit: data.has_disability_permit,
       hasResidentPermit: data.has_resident_permit,
       hasLoadingZonePermit: data.has_loading_zone_permit,
