@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+// Add React to imports to fix 'Cannot find namespace React' errors
+import React, { useState, useEffect } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
@@ -16,7 +17,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.4.2';
 
 const LOADING_MESSAGES = [
   "Analyzing sign vision...",
@@ -122,14 +123,9 @@ const App: React.FC = () => {
   const saveProfile = async (profile: UserProfile) => {
     setIsSyncing(true);
     try {
-      // 1. Immediate local save for responsiveness
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
       setState(prev => ({ ...prev, profile }));
-
-      // 2. Sync to Database
       const syncedProfile = await dbService.saveProfile(profile);
-      
-      // 3. Update state with DB-generated ID or Sync timestamp
       setState(prev => ({ ...prev, profile: syncedProfile }));
       localStorage.setItem(PROFILE_KEY, JSON.stringify(syncedProfile));
 
@@ -144,7 +140,7 @@ const App: React.FC = () => {
       setIsEditingProfile(false);
     } catch (error) {
       console.error("Failed to sync profile:", error);
-      alert("Profile saved locally, but cloud sync failed. Please check your connection.");
+      alert("Profile saved locally, but cloud sync failed.");
     } finally {
       setIsSyncing(false);
     }
@@ -232,14 +228,12 @@ const App: React.FC = () => {
 
   const handleFeedback = (type: 'up' | 'down') => {
     if (!state.image) return;
-    
     const updatedHistory = (state.history || []).map(item => {
       if (item && item.image === state.image) {
         return { ...item, feedback: type };
       }
       return item;
     });
-
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
     setState(prev => ({ ...prev, history: updatedHistory }));
   };
@@ -269,7 +263,7 @@ const App: React.FC = () => {
   const currentItem = (state.history || []).find(h => h && h.image === state.image);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 safe-pb overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 safe-pb overflow-x-hidden pt-4">
       <Header 
         onOpenLegal={() => setShowLegal(true)} 
         onEditProfile={() => setIsEditingProfile(true)}
@@ -279,8 +273,8 @@ const App: React.FC = () => {
       
       <main className="flex-1 overflow-y-auto scrollbar-hide">
         {!state.image ? (
-          <div className="max-w-md mx-auto py-6 px-5 pb-10">
-            <div className="mb-6 space-y-1">
+          <div className="max-w-md mx-auto py-8 px-6 pb-12">
+            <div className="mb-8 space-y-1.5">
               <h2 className="text-[32px] font-black text-slate-900 leading-tight tracking-tight">
                 Can I park <span className="text-emerald-500 underline decoration-[6px] underline-offset-[2px]">here?</span>
               </h2>
@@ -296,9 +290,9 @@ const App: React.FC = () => {
             />
 
             {(state.history || []).length > 0 && (
-              <div className="mt-10 animate-fade-in">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Recent Scans</h3>
+              <div className="mt-12 animate-fade-in">
+                <div className="flex items-center justify-between mb-5 px-1">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recent Scans</h3>
                   <button 
                     onClick={() => {
                       if(confirm("Clear all history?")) {
@@ -306,12 +300,12 @@ const App: React.FC = () => {
                         setState(prev => ({ ...prev, history: [] }));
                       }
                     }}
-                    className="text-[10px] font-bold text-rose-500 uppercase tracking-wider"
+                    className="text-[10px] font-black text-rose-500 uppercase tracking-wider"
                   >
                     Clear All
                   </button>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-1 px-1">
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-1 px-1">
                   {(state.history || []).filter(Boolean).map((item) => {
                     const results = item?.interpretation?.results || [];
                     const canPark = Array.isArray(results) && results.some(r => r?.canParkNow === true);
@@ -320,14 +314,14 @@ const App: React.FC = () => {
                       <div key={item.id} className="relative group shrink-0">
                         <button
                           onClick={() => setState(prev => ({ ...prev, image: item.image, interpretation: item.interpretation }))}
-                          className="w-24 aspect-[3/4] rounded-2xl overflow-hidden border-2 border-white shadow-lg active:scale-95 transition-all block"
+                          className="w-24 aspect-[3/4] rounded-[24px] overflow-hidden border-2 border-white shadow-lg active:scale-95 transition-all block"
                         >
                           <img src={item.image} className="w-full h-full object-cover" alt="History" />
-                          <div className={`absolute bottom-0 inset-x-0 h-1 ${canPark ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <div className={`absolute bottom-0 inset-x-0 h-1.5 ${canPark ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         </button>
                         <button 
                           onClick={(e) => deleteHistoryItem(item.id, e)}
-                          className="absolute -top-2 -right-2 bg-white text-rose-500 rounded-full p-1 shadow-md border border-slate-100"
+                          className="absolute -top-2 -right-2 bg-white text-rose-500 rounded-full p-1.5 shadow-md border border-slate-100 z-10 active:scale-90"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
@@ -339,7 +333,7 @@ const App: React.FC = () => {
             )}
           </div>
         ) : state.isLoading ? (
-           <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center animate-fade-in">
+           <div className="flex flex-col items-center justify-center min-h-[75vh] p-8 text-center animate-fade-in">
               <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center mb-10 relative shadow-2xl shadow-emerald-200/50">
                  <div className="absolute inset-0 border-[6px] border-emerald-500 border-t-transparent rounded-[32px] animate-spin" />
                  <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -347,13 +341,13 @@ const App: React.FC = () => {
                  </svg>
               </div>
               
-              <div className="space-y-3">
-                <div className="bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full inline-block text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+              <div className="space-y-4 max-w-xs">
+                <div className="bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full inline-block text-[10px] font-black uppercase tracking-widest border border-emerald-100 mb-2">
                   Step {loadingMsgIdx + 1} of {LOADING_MESSAGES.length}
                 </div>
                 
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight h-8 flex items-center justify-center overflow-hidden">
-                   <span key={loadingMsgIdx} className="animate-fade-in inline-block">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight min-h-[64px] flex items-center justify-center">
+                   <span key={loadingMsgIdx} className="animate-fade-in inline-block px-2">
                      {LOADING_MESSAGES[loadingMsgIdx]}
                    </span>
                 </h3>
@@ -367,7 +361,7 @@ const App: React.FC = () => {
           <div className="p-10 text-center flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Analysis Failed</h3>
             <p className="text-slate-500 mt-3 mb-10 font-medium leading-relaxed">{state.error}</p>
-            <button onClick={handleReset} className="bg-slate-900 text-white py-4 px-12 rounded-[24px] font-extrabold shadow-xl">Try Again</button>
+            <button onClick={handleReset} className="bg-slate-900 text-white h-16 px-12 rounded-[24px] font-extrabold shadow-xl shadow-slate-200">Try Again</button>
           </div>
         ) : state.interpretation && state.image ? (
           <div className="flex flex-col">
@@ -387,12 +381,12 @@ const App: React.FC = () => {
       </main>
 
       {!state.isLoading && (
-        <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <footer className="px-8 py-6 bg-white border-t border-slate-100 text-center safe-pb">
              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed italic max-w-[320px] mx-auto mb-4">
                AI Guidance only. Users are solely responsible for their own parking and compliance.<br/>
                Parking Sign Reader v{APP_VERSION} - Internet required
              </p>
-             <div className="flex items-center justify-center gap-4">
+             <div className="flex items-center justify-center gap-6">
                <button onClick={() => setShowLegal(true)} className="text-[10px] font-black uppercase tracking-widest text-emerald-600 underline decoration-2 underline-offset-4">Privacy & Terms</button>
                <button onClick={() => setIsEditingProfile(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500">Edit Profile</button>
              </div>
@@ -423,37 +417,23 @@ const App: React.FC = () => {
               </button>
             </div>
             <div className="p-8 space-y-6 overflow-y-auto scrollbar-hide">
-              <div className="space-y-4">
-                <div className="flex gap-4 items-start">
-                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">01</div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">Align the sign</p>
-                    <p className="text-xs text-slate-500 mt-1">Make sure the sign fills most of the frame and is level.</p>
+              <div className="space-y-5">
+                {[
+                  { num: '01', title: 'Align the sign', text: 'Make sure the sign fills most of the frame and is level.' },
+                  { num: '02', title: 'Wait for focus', text: 'Hold steady for 1-2 seconds before snapping the photo.' },
+                  { num: '03', title: 'One at a time', text: 'For best results, scan individual poles rather than busy street scenes.' },
+                  { num: '04', title: 'Review permits', text: 'Ensure your Resident or Disability permits are active in your profile.' }
+                ].map((step) => (
+                  <div key={step.num} className="flex gap-4 items-start">
+                    <div className="bg-emerald-100 text-emerald-600 w-8 h-8 rounded-xl shrink-0 font-black text-xs flex items-center justify-center">{step.num}</div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{step.title}</p>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{step.text}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">02</div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">Wait for focus</p>
-                    <p className="text-xs text-slate-500 mt-1">Hold steady for 1-2 seconds before snapping the photo.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">03</div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">One at a time</p>
-                    <p className="text-xs text-slate-500 mt-1">For best results, scan individual poles rather than busy street scenes.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl shrink-0 font-black text-xs">04</div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">Review permits</p>
-                    <p className="text-xs text-slate-500 mt-1">Ensure your Resident or Disability permits are active in your profile.</p>
-                  </div>
-                </div>
+                ))}
               </div>
-              <button onClick={() => setShowHowToUse(false)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg">Got it!</button>
+              <button onClick={() => setShowHowToUse(false)} className="w-full bg-slate-900 text-white h-16 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-slate-200 active:scale-95 transition-all">Got it!</button>
             </div>
           </div>
         </div>

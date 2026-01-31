@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface HeaderProps {
@@ -10,10 +9,10 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSettings, onLogoClick }) => {
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-5 py-3.5 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 px-5 pt-[env(safe-area-inset-top)] pb-3.5 flex items-center justify-between min-h-[60px]">
       <button 
         onClick={onLogoClick}
-        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none text-left" 
+        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none text-left py-2" 
         aria-label="Parking Sign Reader Home - Return to Scan"
       >
         <div className="shrink-0">

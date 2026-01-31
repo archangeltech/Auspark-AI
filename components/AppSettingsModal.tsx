@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface AppSettingsModalProps {
@@ -57,7 +56,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
     <div className="fixed inset-0 z-[9999] grid place-items-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       
-      <div className="relative bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto">
+      <div className="relative bg-white w-full max-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
           <h2 className="text-xl font-black text-slate-900 text-center flex-1 ml-8">App Settings</h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
@@ -105,7 +104,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
               <p className="text-[11px] text-rose-600 mb-4 leading-relaxed">If the app works in Incognito but not here, a hard reset will clear the browser's internal cache for this site.</p>
               <button 
                 onClick={handleHardReset}
-                className="w-full bg-rose-600 text-white py-3 rounded-xl font-black text-sm shadow-md active:scale-[0.98] transition-all"
+                className="w-full bg-rose-600 text-white h-16 rounded-xl font-black text-sm shadow-md active:scale-[0.98] transition-all"
               >
                 Clear Cache & Hard Reset
               </button>
@@ -114,7 +113,7 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose }) 
 
           <button 
             onClick={handleRequestPermission}
-            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all"
+            className="w-full bg-slate-900 text-white h-16 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all"
           >
             Request Permissions
           </button>
