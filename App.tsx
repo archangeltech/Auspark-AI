@@ -1,3 +1,4 @@
+
 // Add React to imports to fix 'Cannot find namespace React' errors
 import React, { useState, useEffect, useRef } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
@@ -18,7 +19,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.0.4';
+const APP_VERSION = '1.0.5';
 
 const LOADING_MESSAGES = [
   "Capturing vision...",
@@ -467,31 +468,31 @@ const App: React.FC = () => {
       {showHowToUse && (
         <div className="fixed inset-0 z-[10000] grid place-items-center p-6">
           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={() => setShowHowToUse(false)} />
-          <div className="relative bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[85vh]">
-            <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Scanning Tips</h2>
+          <div className="relative bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[90vh]">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Scanning Tips</h2>
               <button onClick={() => setShowHowToUse(false)} className="p-2 text-slate-400">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <div className="p-10 space-y-10 overflow-y-auto scrollbar-hide">
-              <div className="space-y-10">
+            <div className="px-8 pb-8 pt-6 space-y-6 overflow-hidden">
+              <div className="space-y-5">
                 {[
                   { icon: '🎯', title: 'Frame it', text: 'Align the sign inside the emerald brackets.' },
                   { icon: '📸', title: 'Steady shot', text: 'Wait for focus. Avoid lens flare or deep shadows.' },
                   { icon: '🚥', title: 'One Pole', text: 'Scan one pole at a time for the best accuracy.' },
                   { icon: '🛂', title: 'Set Permits', text: 'Ensure your resident zones are set in your profile.' }
                 ].map((step, idx) => (
-                  <div key={idx} className="flex gap-6 items-start">
-                    <div className="text-4xl shrink-0">{step.icon}</div>
+                  <div key={idx} className="flex gap-5 items-start">
+                    <div className="text-3xl shrink-0 pt-0.5">{step.icon}</div>
                     <div>
-                      <p className="font-black text-slate-900 text-xl tracking-tight leading-none mb-2">{step.title}</p>
-                      <p className="text-sm font-bold text-slate-500 leading-snug">{step.text}</p>
+                      <p className="font-black text-slate-900 text-lg tracking-tight leading-none mb-1">{step.title}</p>
+                      <p className="text-[13px] font-bold text-slate-500 leading-snug">{step.text}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <button onClick={() => setShowHowToUse(false)} className="w-full bg-emerald-500 text-white h-20 rounded-[32px] font-black text-xl shadow-2xl shadow-emerald-100 active:scale-95 transition-all">Start Scanning</button>
+              <button onClick={() => setShowHowToUse(false)} className="w-full bg-emerald-500 text-white h-16 rounded-[28px] font-black text-lg shadow-2xl shadow-emerald-100 active:scale-95 transition-all mt-4">Start Scanning</button>
             </div>
           </div>
         </div>

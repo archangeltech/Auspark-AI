@@ -49,83 +49,119 @@ const Results: React.FC<ResultsProps> = ({
       })
     : null;
 
-  const handleFeedback = async (type: 'up' | 'down') => {
+  const handleFeedback = (type: 'up' | 'down') => {
     setFeedback(type);
     if (onFeedback) onFeedback(type);
-    
-    // Sync feedback to cloud if profile exists
-    if (profile?.email) {
-      try {
-        await dbService.saveFeedback(profile.email, scanTimestamp?.toString() || Date.now().toString(), type);
-      } catch (err) {
-        console.warn("Feedback cloud sync failed:", err);
-      }
-    }
   };
 
   const handleSendReport = async () => {
     setIsSendingReport(true);
     setReportError(null);
-    const WEB3FORMS_ACCESS_KEY = "af4bf796-f781-401e-ad3c-f6668d08fa52"; 
+    
+    const WEB3FORMS_ACCESS_KEY = process.env.VITE_WEB3FORMS_KEY || "af4bf796-f781-401e-ad3c-f6668d08fa52";
 
     try {
-      // 1. Save to Supabase (Hard check - if keys exist, it MUST succeed or throw)
-      const hasSupabaseKeys = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY;
-      
-      if (hasSupabaseKeys) {
-        await dbService.saveReport({
-          userEmail: profile?.email || 'anonymous',
-          issueCategory: reportIssue,
-          description: reportDescription,
-          aiSummary: activeResult.summary,
-          aiExplanation: activeResult.explanation,
-          timestamp: Date.now(),
-          imageAttached: true,
-          imageData: image,
-          source: 'Original'
-        });
+      console.log('📤 Starting report submission...');
+
+      // Step 1: Save to Supabase (includes image upload to Storage)
+      const saveResult = await dbService.saveReport({
+        userEmail: profile?.email || 'anonymous',
+        issueCategory: reportIssue,
+        description: reportDescription,
+        aiSummary: activeResult.summary,
+        aiExplanation: activeResult.explanation,
+        timestamp: Date.now(),
+        imageAttached: true,
+        imageData: image,
+        source: 'Original'
+      });
+
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Failed to save report to database');
       }
 
-      // 2. Secondary Email Fallback via Web3Forms
+      console.log('✅ Report saved to Supabase');
+      const imageUrl = saveResult.imageUrl;
+
+      // Step 2: Send email notification
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const emailMessage = `
+╔══════════════════════════════════════════╗
+║   PARKING SIGN READER - ISSUE REPORT    ║
+╚══════════════════════════════════════════╝
+
+📋 Issue Category: ${reportIssue}
+
+👤 User: ${profile?.fullName || 'Anonymous'}
+📧 Email: ${profile?.email || 'Not provided'}
+
+📝 User Description:
+${reportDescription}
+
+🤖 AI Summary: 
+${activeResult.summary}
+
+💬 AI Explanation:
+${activeResult.explanation}
+
+📸 Image: ${imageUrl ? '✅ Uploaded to Supabase Storage' : '⚠️ No image'}
+${imageUrl ? `🔗 View Image: ${imageUrl}` : ''}
+
+⏰ Timestamp: ${new Date().toLocaleString('en-AU')}
+📍 Report ID: ${Date.now()}
+
+---
+Sent from Parking Sign Reader App v1.0.4
+      `.trim();
+
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
           Accept: "application/json" 
         },
+        signal: controller.signal,
         body: JSON.stringify({
           access_key: WEB3FORMS_ACCESS_KEY,
-          subject: `🚗 Parking Issue Report: ${reportIssue}`,
+          subject: `🚗 Parking Sign Reader - ${reportIssue}`,
           from_name: profile?.fullName || "App User",
-          email: profile?.email || "noreply@auspark.ai",
-          message: `
-╔══════════════════════════════════════════╗
-║   PARKING SIGN READER - ISSUE REPORT     ║
-╚══════════════════════════════════════════╝
-
-📋 Category: ${reportIssue}
-👤 User: ${profile?.fullName || 'Anonymous'}
-📧 Email: ${profile?.email || 'Not provided'}
-
-📝 Description:
-${reportDescription}
-
-🤖 AI Interpretation: 
-"${activeResult.explanation}"
-
-⏰ Timestamp: ${new Date().toLocaleString('en-AU')}
-    `.trim(),
+          email: profile?.email || "noreply@parkingsignreader.com.au",
+          message: emailMessage,
         }),
       });
 
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Email service error (${res.status}): ${errorText || res.statusText}`);
+      }
+
       const json = await res.json();
-      if (json.success || hasSupabaseKeys) {
+      
+      if (json.success) {
+        console.log('✅ Email sent successfully');
         setReportSuccess(true);
       } else {
-        throw new Error(json.message || "Failed to transmit report.");
+        throw new Error(json.message || "Email service rejected submission");
       }
+
     } catch (err: any) {
-      setReportError(err.message || "An unexpected error occurred while saving.");
+      console.error('❌ Report submission error:', err);
+      
+      if (err.name === 'AbortError') {
+        setReportError("Request timeout. Please check your internet connection.");
+      } else if (err.message.includes('Database not configured')) {
+        setReportError("Database error. Please check your Supabase configuration.");
+      } else if (err.message.includes('Image upload failed')) {
+        setReportError("Failed to upload image. Please try again or check your internet connection.");
+      } else if (err.message.includes('fetch') || err.message.includes('network')) {
+        setReportError("Network error. Please check your connection and try again.");
+      } else {
+        setReportError(err.message || "Failed to send report. Please try again.");
+      }
     } finally {
       setIsSendingReport(false);
     }
@@ -182,31 +218,39 @@ ${reportDescription}
              disabled={isRechecking} 
              className="absolute bottom-6 right-6 z-10 bg-white/10 backdrop-blur-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl active:scale-95 transition-all flex items-center gap-2 shadow-2xl"
            >
-             <svg className={`w-4 h-4 ${isRechecking ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15" /></svg>
-             {isRechecking ? 'Syncing...' : 'Re-Check'}
+             {isRechecking ? (
+               <>
+                 <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                 <span>Rechecking...</span>
+               </>
+             ) : (
+               <>
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                 <span>Recheck</span>
+               </>
+             )}
            </button>
         )}
       </div>
 
-      {/* Decision Content */}
-      <div className="flex-1 bg-white px-8 pt-8 pb-8 relative z-20">
-        <div className="max-w-md mx-auto">
-          
-          {/* Directional Tabs if multiple results exist */}
-          {data.results.length > 1 && (
-            <div className="flex bg-slate-50 border border-slate-100 p-1.5 rounded-[24px] mb-8 shadow-sm">
-              {data.results.map((res, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 py-4 px-2 rounded-[18px] text-[11px] font-black uppercase tracking-widest transition-all ${activeIdx === idx ? 'bg-white text-slate-900 shadow-md ring-1 ring-slate-100' : 'text-slate-400'}`}
-                >
-                  {getDirectionLabel(res.direction)}
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Multi-directional result selector */}
+      {data.results.length > 1 && (
+        <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex gap-2 overflow-x-auto scrollbar-hide shrink-0">
+          {data.results.map((res, idx) => (
+            <button 
+              key={idx} 
+              onClick={() => setActiveIdx(idx)} 
+              className={`px-4 py-2 rounded-2xl font-bold text-[10px] uppercase tracking-wider whitespace-nowrap transition-all ${activeIdx === idx ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}
+            >
+              {getDirectionLabel(res.direction)}
+            </button>
+          ))}
+        </div>
+      )}
 
+      {/* Core result content */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="p-10 max-w-2xl mx-auto w-full">
           <div className="flex items-start justify-between mb-8">
             <div className="space-y-1">
               <div className="flex items-center gap-2 mb-1">
@@ -305,22 +349,57 @@ ${reportDescription}
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={closeReportModal} />
           <div className="relative bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[90vh]">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{reportSuccess ? 'Success' : 'Report Issue'}</h2>
-              <button onClick={closeReportModal} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                {reportSuccess ? 'Success' : isSendingReport ? 'Sending...' : 'Report Issue'}
+              </h2>
+              <button onClick={closeReportModal} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             <div className="p-10 space-y-8 overflow-y-auto scrollbar-hide">
               {reportSuccess ? (
                 <div className="text-center py-4">
-                   <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[36px] flex items-center justify-center mx-auto mb-8 shadow-inner"><svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg></div>
-                   <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Report Submitted</h3>
-                   <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">Our engineering team will review this interpretation to improve our logic engine.</p>
-                   <button onClick={closeReportModal} className="mt-10 w-full bg-slate-900 text-white h-20 rounded-[32px] font-black active:scale-95 transition-all">Back to Results</button>
+                   <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[36px] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                     </svg>
+                   </div>
+                   <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Report Submitted!</h3>
+                   <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">
+                     Thank you! Your parking sign image has been uploaded to our database. Our team will review it to improve the AI.
+                   </p>
+                   <button 
+                     onClick={closeReportModal} 
+                     className="mt-10 w-full bg-slate-900 text-white h-20 rounded-[32px] font-black active:scale-95 transition-all"
+                   >
+                     Back to Results
+                   </button>
+                </div>
+              ) : isSendingReport ? (
+                <div className="text-center py-4">
+                   <div className="w-24 h-24 bg-blue-100 text-blue-600 rounded-[36px] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                     <svg className="w-12 h-12 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                     </svg>
+                   </div>
+                   <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Uploading Image...</h3>
+                   <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">
+                     Saving to Supabase Storage and notifying our team
+                   </p>
                 </div>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     {["Logic error", "Can't find sign", "Rules misread", "Other"].map(label => (
-                      <button key={label} onClick={() => setReportIssue(label)} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center text-center ${reportIssue === label ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-400'}`}>{label}</button>
+                      <button 
+                        key={label} 
+                        onClick={() => setReportIssue(label)} 
+                        className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center text-center ${reportIssue === label ? 'border-emerald-500 bg-emerald-50 text-emerald-900' : 'border-slate-100 bg-slate-50 text-slate-400'}`}
+                      >
+                        {label}
+                      </button>
                     ))}
                   </div>
                   
@@ -331,10 +410,16 @@ ${reportDescription}
                     className="w-full h-40 p-6 rounded-[32px] border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-sm resize-none" 
                   />
                   
-                  {reportError && <p className="text-rose-500 text-[11px] font-black uppercase text-center">{reportError}</p>}
+                  {reportError && (
+                    <div className="bg-rose-50 border-2 border-rose-200 rounded-3xl p-4">
+                      <p className="text-rose-600 text-xs font-black uppercase text-center leading-relaxed">
+                        {reportError}
+                      </p>
+                    </div>
+                  )}
                   
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center px-4 leading-relaxed">
-                    Notice: Your captured image and profile name will be sent to our team to help improve AI accuracy.
+                    Your parking sign image will be uploaded to Supabase Storage to help improve AI accuracy.
                   </p>
 
                   <button 
@@ -342,7 +427,7 @@ ${reportDescription}
                     disabled={isSendingReport || !reportIssue || !reportDescription.trim()} 
                     className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black disabled:opacity-30 shadow-xl active:scale-95 transition-all text-lg tracking-tight"
                   >
-                    {isSendingReport ? 'Transmitting...' : 'Submit Report'}
+                    {isSendingReport ? 'Uploading...' : 'Submit Report'}
                   </button>
                 </>
               )}
