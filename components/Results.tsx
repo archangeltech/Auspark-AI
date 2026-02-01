@@ -114,8 +114,8 @@ const Results: React.FC<ResultsProps> = ({
 
   return (
     <div className="flex flex-col flex-1 animate-fade-in bg-white">
-      {/* Contextual Image Preview */}
-      <div className="relative w-full aspect-video bg-slate-900 border-b border-slate-200 overflow-hidden shrink-0">
+      {/* Contextual Image Preview - Changed to 4:3 for a bigger look */}
+      <div className="relative w-full aspect-[4/3] bg-slate-900 border-b border-slate-200 overflow-hidden shrink-0">
         <img src={image} alt="Target Sign" className="w-full h-full object-contain" />
         <div className="absolute top-6 left-6 flex flex-col gap-2">
            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/20 px-3 py-1.5 rounded-full inline-flex items-center gap-2">
@@ -164,7 +164,8 @@ const Results: React.FC<ResultsProps> = ({
                  {activeResult.direction === 'right' && <span className="text-2xl leading-none">→</span>}
                  <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.15em]">{getDirectionLabel(activeResult.direction)}</p>
               </div>
-              <h2 className={`text-6xl font-black tracking-tighter leading-none ${isAllowed ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {/* Reduced size from 6xl to 4xl for better mobile compatibility */}
+              <h2 className={`text-4xl font-black tracking-tighter leading-none ${isAllowed ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {isAllowed ? 'ALLOWED' : 'NOPE'}
               </h2>
               <p className="text-slate-400 font-black uppercase text-xs tracking-[0.15em]">{activeResult.summary}</p>

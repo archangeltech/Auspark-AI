@@ -11,8 +11,8 @@ export interface UserProfile {
   email: string;
   hasDisabilityPermit: boolean;
   hasResidentPermit: boolean;
-  hasLoadingZonePermit: boolean;
-  hasBusinessPermit: boolean;
+  hasLoadingVehicle: boolean;
+  hasHorseCarriage: boolean;
   hasBusPermit: boolean;
   hasTaxiPermit: boolean;
   residentArea?: string;

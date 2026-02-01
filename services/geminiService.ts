@@ -25,11 +25,11 @@ export const interpretParkingSign = async (
     : "Location not provided.";
 
   const permitContext = `
-    USER PERMITS (EXEMPTIONS):
+    USER PERMITS & VEHICLE TYPE (EXEMPTIONS):
     - Disability Permit (MPS/ADP): ${profile.hasDisabilityPermit}
     - Resident Permit: ${profile.hasResidentPermit} (Area: ${profile.residentArea || 'N/A'})
-    - Loading Zone Permit: ${profile.hasLoadingZonePermit}
-    - Business Permit: ${profile.hasBusinessPermit}
+    - Loading Vehicle (Truck/Commercial): ${profile.hasLoadingVehicle}
+    - Horse carriage: ${profile.hasHorseCarriage}
     - Bus Permit / Authorized Vehicle: ${profile.hasBusPermit}
     - Taxi Permit / Authorized Taxi: ${profile.hasTaxiPermit}
   `;
@@ -62,8 +62,9 @@ export const interpretParkingSign = async (
     AUSTRALIAN RULES:
     1. Disability Permits: 1P -> 2H, 1/2P -> 2H in green-sign zones.
     2. Resident Permits: Exempt from Permit Zone and time limits in matching Area.
-    3. Loading Zones: Require commercial/LZ permits.
-    4. Bus/Taxi Zones: Only allowed if specific permit is active.
+    3. Loading Zones: Require a Loading Vehicle or specific commercial permit.
+    4. Horse carriage: Authorized to park in specific marked carriage zones.
+    5. Bus/Taxi Zones: Only allowed if specific permit is active.
 
     OUTPUT: Return JSON with errorInfo and results.
   `;
