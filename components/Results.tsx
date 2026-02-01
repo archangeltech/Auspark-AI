@@ -49,9 +49,18 @@ const Results: React.FC<ResultsProps> = ({
       })
     : null;
 
-  const handleFeedback = (type: 'up' | 'down') => {
+  const handleFeedback = async (type: 'up' | 'down') => {
     setFeedback(type);
     if (onFeedback) onFeedback(type);
+    
+    // Sync feedback to cloud if profile exists
+    if (profile?.email) {
+      try {
+        await dbService.saveFeedback(profile.email, scanTimestamp?.toString() || Date.now().toString(), type);
+      } catch (err) {
+        console.warn("Feedback cloud sync failed:", err);
+      }
+    }
   };
 
   const handleSendReport = async () => {
@@ -60,36 +69,63 @@ const Results: React.FC<ResultsProps> = ({
     const WEB3FORMS_ACCESS_KEY = "af4bf796-f781-401e-ad3c-f6668d08fa52"; 
 
     try {
-      await dbService.saveReport({
-        userEmail: profile?.email || 'anonymous',
-        issueCategory: reportIssue,
-        description: reportDescription,
-        aiSummary: activeResult.summary,
-        aiExplanation: activeResult.explanation,
-        timestamp: Date.now(),
-        imageAttached: true,
-        imageData: image,
-        source: 'Original'
-      });
+      // 1. Save to Supabase (Hard check - if keys exist, it MUST succeed or throw)
+      const hasSupabaseKeys = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY;
+      
+      if (hasSupabaseKeys) {
+        await dbService.saveReport({
+          userEmail: profile?.email || 'anonymous',
+          issueCategory: reportIssue,
+          description: reportDescription,
+          aiSummary: activeResult.summary,
+          aiExplanation: activeResult.explanation,
+          timestamp: Date.now(),
+          imageAttached: true,
+          imageData: image,
+          source: 'Original'
+        });
+      }
 
+      // 2. Secondary Email Fallback via Web3Forms
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: { 
+          "Content-Type": "application/json", 
+          Accept: "application/json" 
+        },
         body: JSON.stringify({
           access_key: WEB3FORMS_ACCESS_KEY,
-          subject: `Parking Issue: ${reportIssue}`,
+          subject: `🚗 Parking Issue Report: ${reportIssue}`,
           from_name: profile?.fullName || "App User",
-          from_email: profile?.email || "support@auspark.ai",
-          message: `User: ${profile?.fullName || 'Anonymous'}\nIssue: ${reportIssue}\n\nDescription:\n${reportDescription}\n\nAI Summary: ${activeResult.summary}`,
-          captured_image: image
+          email: profile?.email || "noreply@auspark.ai",
+          message: `
+╔══════════════════════════════════════════╗
+║   PARKING SIGN READER - ISSUE REPORT     ║
+╚══════════════════════════════════════════╝
+
+📋 Category: ${reportIssue}
+👤 User: ${profile?.fullName || 'Anonymous'}
+📧 Email: ${profile?.email || 'Not provided'}
+
+📝 Description:
+${reportDescription}
+
+🤖 AI Interpretation: 
+"${activeResult.explanation}"
+
+⏰ Timestamp: ${new Date().toLocaleString('en-AU')}
+    `.trim(),
         }),
       });
-      
+
       const json = await res.json();
-      if (json.success) setReportSuccess(true);
-      else throw new Error(json.message || "Submission failed");
+      if (json.success || hasSupabaseKeys) {
+        setReportSuccess(true);
+      } else {
+        throw new Error(json.message || "Failed to transmit report.");
+      }
     } catch (err: any) {
-      setReportError(err.message || "Failed to transmit report.");
+      setReportError(err.message || "An unexpected error occurred while saving.");
     } finally {
       setIsSendingReport(false);
     }

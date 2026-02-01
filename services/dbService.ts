@@ -33,7 +33,7 @@ export const dbService = {
       .select()
       .single();
 
-    if (error) throw new Error(`Supabase Error: ${error.message}`);
+    if (error) throw new Error(`Supabase Profile Error: ${error.message}`);
 
     const updatedProfile: UserProfile = {
       id: data.id,
@@ -54,7 +54,10 @@ export const dbService = {
   },
 
   async saveReport(report: ParkingReport): Promise<void> {
-    if (!supabase) return;
+    if (!supabase) {
+      throw new Error("Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY to your .env file.");
+    }
+    
     const { error } = await supabase
       .from('reports')
       .insert({
@@ -68,7 +71,25 @@ export const dbService = {
         image_data: report.imageData,
         source: report.source
       });
-    if (error) console.error("Report DB Error:", error.message);
+      
+    if (error) {
+      throw new Error(`Database Insert Failed: ${error.message}`);
+    }
+  },
+
+  async saveFeedback(email: string, reportId: string, rating: 'up' | 'down'): Promise<void> {
+    if (!supabase) return;
+    
+    const { error } = await supabase
+      .from('feedback')
+      .insert({
+        user_email: email,
+        report_id: reportId,
+        rating: rating,
+        timestamp: new Date().toISOString()
+      });
+      
+    if (error) console.error("Cloud Feedback Sync Failed:", error.message);
   },
 
   async deleteProfile(email: string): Promise<void> {
