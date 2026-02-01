@@ -67,8 +67,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
   if (step === 1) {
     return (
       <div className="fixed inset-0 z-[200] bg-white flex flex-col p-8 items-center text-center justify-center animate-fade-in">
-        <div className="w-24 h-24 mb-8 bg-emerald-50 rounded-full flex items-center justify-center">
-           <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" stroke-width="4"/><circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" stroke-width="4"/><text x="50" y="44" text-anchor="middle" font-weight="900" font-size="26" fill="black">P</text></svg>
+        <div className="w-24 h-24 mb-8 flex items-center justify-center">
+          <svg width="80" height="80" viewBox="-4 -4 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" strokeWidth="4" strokeLinejoin="round"/>
+            <circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" strokeWidth="4"/>
+            <circle cx="50" cy="35" r="20" fill="#A7F3D0" stroke="black" strokeWidth="4"/>
+            <text x="50" y="44" textAnchor="middle" fontWeight="900" fontSize="28" fill="black">P</text>
+          </svg>
         </div>
         <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-4">Parking Logic, <span className="text-emerald-500">Solved.</span></h1>
         <p className="text-slate-500 font-medium max-w-xs mb-10">Instant AI-powered interpretation for Australian parking signs.</p>
@@ -141,7 +146,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
             { id: 'hasLoadingVehicle', label: 'Loading vehicle', icon: '🚛' },
             { id: 'hasHorseCarriage', label: 'Horse carriage', icon: '🐎' },
             { id: 'hasBusPermit', label: 'Bus / Auth. Vehicle', icon: '🚌' },
-            { id: 'hasTaxiPermit', label: 'Taxi Permit', icon: '🚕' },
+            { id: 'hasTaxiPermit', label: 'Taxi', icon: '🚕' },
           ].map(item => (
             <button key={item.id} onClick={() => handleInputChange(item.id as keyof UserProfile, !profile[item.id as keyof UserProfile])} className={`p-4 rounded-2xl border-2 flex items-center gap-4 text-left transition-all active:scale-[0.98] ${profile[item.id as keyof UserProfile] ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-white'}`}>
               <span className="text-xl">{item.icon}</span><span className="font-bold flex-1">{item.label}</span>

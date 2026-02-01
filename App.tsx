@@ -1,8 +1,9 @@
 // Add React to imports to fix 'Cannot find namespace React' errors
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import Header from './components/Header.tsx';
 import Scanner from './components/Scanner.tsx';
 import Results from './components/Results.tsx';
@@ -17,7 +18,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.0.2';
+const APP_VERSION = '1.0.4';
 
 const LOADING_MESSAGES = [
   "Capturing vision...",
@@ -39,6 +40,8 @@ const App: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [resetKey, setResetKey] = useState<number>(0);
   
+  const retakeCameraInputRef = useRef<HTMLInputElement>(null);
+
   const [state, setState] = useState<AppState>({
     image: null,
     interpretation: null,
@@ -205,6 +208,16 @@ const App: React.FC = () => {
 
       const interpretation = await interpretParkingSign(image, timeStr, dayStr, state.profile, location);
       
+      // Handle AI-detected image quality or logic errors
+      if (interpretation.errorInfo && interpretation.errorInfo.code !== 'SUCCESS') {
+        setState(prev => ({ 
+          ...prev, 
+          isLoading: false, 
+          error: `${interpretation.errorInfo?.message} ${interpretation.errorInfo?.suggestion}`.trim() 
+        }));
+        return;
+      }
+
       const newHistoryItem: HistoryItem = {
         id: Date.now().toString(),
         timestamp: Date.now(),
@@ -220,20 +233,54 @@ const App: React.FC = () => {
         image,
         interpretation,
         isLoading: false,
-        history: updatedHistory
+        history: updatedHistory,
+        error: null
       }));
     } catch (err: any) {
-      setState(prev => ({ ...prev, isLoading: false, error: err.message || "Network Error. Please try again." }));
+      setState(prev => ({ ...prev, isLoading: false, error: err.message || "Network Error. Please check your connection and try again." }));
     }
   };
 
   const handleImageSelected = async (base64: string) => {
-    setState(prev => ({ ...prev, image: base64, interpretation: null }));
+    setState(prev => ({ ...prev, image: base64, interpretation: null, error: null }));
     await performAnalysis(base64);
   };
 
   const handleRecheck = async () => {
     if (state.image) await performAnalysis(state.image);
+  };
+
+  const handleRetakePhoto = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const image = await Camera.getPhoto({
+          quality: 90,
+          allowEditing: false,
+          resultType: CameraResultType.Base64,
+          source: CameraSource.Camera
+        });
+        
+        if (image.base64String) {
+          handleImageSelected(`data:image/${image.format};base64,${image.base64String}`);
+        }
+      } catch (error) {
+        console.error('Camera error:', error);
+      }
+    } else {
+      retakeCameraInputRef.current?.click();
+    }
+  };
+
+  const handleRetakeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handleImageSelected(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
   };
 
   const handleFeedback = (type: 'up' | 'down') => {
@@ -271,7 +318,7 @@ const App: React.FC = () => {
   const currentItem = (state.history || []).find(h => h && h.image === state.image);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col selection:bg-emerald-200 safe-pb overflow-x-hidden">
+    <div className="h-full bg-white flex flex-col selection:bg-emerald-200 safe-pb overflow-hidden">
       <Header 
         onOpenLegal={() => setShowLegal(true)} 
         onEditProfile={() => setIsEditingProfile(true)}
@@ -280,7 +327,7 @@ const App: React.FC = () => {
       />
       
       <main className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
-        {!state.image ? (
+        {!state.image && !state.error ? (
           <div className="max-w-md mx-auto py-10 px-8 pb-20 w-full flex-1 flex flex-col">
             <div className="mb-12 space-y-2">
               <h2 className="text-[44px] font-black text-slate-900 leading-[0.95] tracking-tighter">
@@ -316,7 +363,7 @@ const App: React.FC = () => {
                     return (
                       <div key={item.id} className="relative shrink-0">
                         <button
-                          onClick={() => setState(prev => ({ ...prev, image: item.image, interpretation: item.interpretation }))}
+                          onClick={() => setState(prev => ({ ...prev, image: item.image, interpretation: item.interpretation, error: null }))}
                           className="w-36 aspect-[3/4] rounded-[40px] overflow-hidden border-2 border-slate-50 shadow-2xl active:scale-95 transition-all block relative"
                         >
                           <img src={item.image} className="w-full h-full object-cover" alt="Scan" />
@@ -355,13 +402,33 @@ const App: React.FC = () => {
               </div>
            </div>
         ) : state.error ? (
-          <div className="p-12 text-center flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
-            <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-[32px] flex items-center justify-center mb-10 shadow-inner">
+          <div className="p-12 text-center flex flex-col items-center justify-center min-h-[80vh] animate-fade-in max-w-md mx-auto">
+            <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-[32px] flex items-center justify-center mb-10 shadow-inner ring-1 ring-rose-100">
               <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </div>
-            <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Analysis Blocked</h3>
-            <p className="text-slate-500 mt-4 mb-12 font-bold text-lg leading-snug max-w-xs">{state.error}</p>
-            <button onClick={handleReset} className="w-full max-w-sm bg-slate-900 text-white h-20 rounded-[32px] font-black text-xl shadow-2xl active:scale-95 transition-all">Back to Camera</button>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-4">Analysis Failed</h3>
+            <div className="bg-rose-50/50 border border-rose-100 rounded-[32px] p-6 mb-12">
+              <p className="text-slate-700 font-bold text-lg leading-snug">{state.error}</p>
+            </div>
+            <div className="flex flex-col w-full gap-4">
+              <button 
+                onClick={handleRetakePhoto} 
+                className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
+                Retake Photo
+              </button>
+              <button 
+                onClick={() => {
+                  setState(prev => ({ ...prev, error: null, image: null }));
+                }}
+                className="w-full bg-white text-slate-400 h-16 rounded-[28px] font-black text-sm uppercase tracking-[0.2em] hover:text-slate-600 transition-all"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+            {/* Hidden Input for Web Fallback */}
+            <input type="file" ref={retakeCameraInputRef} onChange={handleRetakeFileChange} accept="image/*" capture="environment" className="hidden" />
           </div>
         ) : state.interpretation && state.image ? (
           <Results 
@@ -379,7 +446,7 @@ const App: React.FC = () => {
       </main>
 
       {!state.isLoading && (
-        <footer className="px-10 py-10 bg-slate-50 border-t border-slate-100 text-center safe-pb">
+        <footer className="px-10 py-10 bg-slate-50 border-t border-slate-100 text-center shrink-0">
              <div className="flex items-center justify-center gap-10 mb-8">
                <button onClick={() => setShowLegal(true)} className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Legal</button>
                <div className="w-1 h-1 bg-slate-300 rounded-full" />

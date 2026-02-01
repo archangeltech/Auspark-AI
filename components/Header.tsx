@@ -15,11 +15,12 @@ const Header: React.FC<HeaderProps> = ({ onOpenLegal, onEditProfile, onOpenSetti
         className="flex items-center gap-3 active:scale-95 transition-all focus:outline-none" 
         aria-label="Home"
       >
-        <div className="w-11 h-11 bg-slate-900 rounded-[16px] flex items-center justify-center shadow-lg">
-          <svg width="26" height="26" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" />
-            <circle cx="50" cy="35" r="22" fill="white" />
-            <text x="50" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="28" fill="#10B981">P</text>
+        <div className="w-12 h-12 flex items-center justify-center">
+          <svg width="40" height="40" viewBox="-4 -4 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 95C50 95 90 60 90 35C90 12 72 0 50 0C28 0 10 12 10 35C10 60 50 95 50 95Z" fill="#10B981" stroke="black" strokeWidth="4" strokeLinejoin="round"/>
+            <circle cx="50" cy="35" r="28" fill="#F1F5F9" stroke="black" strokeWidth="4"/>
+            <circle cx="50" cy="35" r="20" fill="#A7F3D0" stroke="black" strokeWidth="4"/>
+            <text x="50" y="44" textAnchor="middle" fontVariant="all-small-caps" fontWeight="900" fontSize="28" fill="black">P</text>
           </svg>
         </div>
         <div className="flex flex-col text-left">

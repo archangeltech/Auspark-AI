@@ -1,6 +1,6 @@
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M512 960C512 960 920 580 920 360C920 140 737.32 40 512 40C286.68 40 104 140 104 360C104 580 512 960 512 960Z" fill="#10B981" stroke="black" stroke-width="40"/>
+<svg width="1024" height="1024" viewBox="-40 -40 1104 1104" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 960C512 960 920 580 920 360C920 140 737.32 40 512 40C286.68 40 104 140 104 360C104 580 512 960 512 960Z" fill="#10B981" stroke="black" stroke-width="40" stroke-linejoin="round"/>
   <circle cx="512" cy="360" r="280" fill="#F1F5F9" stroke="black" stroke-width="40"/>
   <circle cx="512" cy="360" r="200" fill="#A7F3D0" stroke="black" stroke-width="40"/>
-  <text x="512" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="280" fill="black">P</text>
+  <text x="512" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="280" fill="black">P</text>
 </svg>

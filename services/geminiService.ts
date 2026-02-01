@@ -31,40 +31,39 @@ export const interpretParkingSign = async (
     - Loading Vehicle (Truck/Commercial): ${profile.hasLoadingVehicle}
     - Horse carriage: ${profile.hasHorseCarriage}
     - Bus Permit / Authorized Vehicle: ${profile.hasBusPermit}
-    - Taxi Permit / Authorized Taxi: ${profile.hasTaxiPermit}
+    - Taxi: ${profile.hasTaxiPermit}
   `;
 
   const prompt = `
     Analyze the provided image of Australian parking sign(s).
     
     TASK 1: VALIDATE IMAGE QUALITY & CONTENT
-    Check for the following common failure scenarios:
-    1. Poor quality: Is the text unreadable or sign extremely blurry? (Code: BLURRY)
-    2. No sign: Is there no parking sign in the frame? (Code: NO_SIGN)
-    3. Multiple signs: Are there more than 2 distinct physical poles or a chaotic array of signs? (Code: MULTIPLE_SIGNS)
-    4. Ambiguity: Are the rules conflicting or the image so cluttered it's unsafe to guess? (Code: AMBIGUOUS)
+    Before interpreting, check for failure scenarios. If one is found, set code to the appropriate value (BLURRY, NO_SIGN, MULTIPLE_SIGNS, or AMBIGUOUS) and provide a helpful message and suggestion.
+    1. BLURRY: The image is unreadable, out of focus, or obscured by glare.
+       Message: "We can't read the text in this photo."
+       Suggestion: "Try holding the camera steady and wait for it to focus."
+    2. NO_SIGN: There is no Australian parking sign visible in the image.
+       Message: "This doesn't look like a parking sign."
+       Suggestion: "Please ensure the sign is fully visible within the frame."
+    3. MULTIPLE_SIGNS: Multiple different sign poles are in the image, causing confusion.
+       Message: "There are too many signs in one photo."
+       Suggestion: "Try scanning just one pole at a time for better accuracy."
+    4. AMBIGUOUS: Conflicting rules or obscured arrows make it unsafe to guess.
+       Message: "The parking rules here are too complex to read clearly."
+       Suggestion: "Try taking a closer photo of the specific sign you're looking at."
 
-    TASK 2: INTERPRET RULES
+    TASK 2: INTERPRET RULES (If code is SUCCESS)
     If the image is clear, detect Arrows (Left/Right) and apply rules:
     - Current Time: ${currentTime}
     - Current Day: ${userDay}
     - ${locationContext}
     ${permitContext}
 
-    LANGUAGE STYLE (IMPORTANT):
+    LANGUAGE STYLE:
     Use natural, clear, non-technical English in 'summary' and 'explanation'.
     - Convert "1P", "2P", "1/2P" into "1 hour", "2 hours", "30 minutes".
     - Convert "Metered", "Meter", or "Ticket" into "paid parking".
     - Convert "No Standing" into "No stopping or waiting".
-    - Example: Instead of "1P Metered Parking", use "1 hour paid parking".
-    - Example: Instead of "1/2P Resident Permit Area 5", use "30 minute parking (Free for Area 5 residents)".
-
-    AUSTRALIAN RULES:
-    1. Disability Permits: 1P -> 2H, 1/2P -> 2H in green-sign zones.
-    2. Resident Permits: Exempt from Permit Zone and time limits in matching Area.
-    3. Loading Zones: Require a Loading Vehicle or specific commercial permit.
-    4. Horse carriage: Authorized to park in specific marked carriage zones.
-    5. Bus/Taxi Zones: Only allowed if specific permit is active.
 
     OUTPUT: Return JSON with errorInfo and results.
   `;
@@ -74,9 +73,11 @@ export const interpretParkingSign = async (
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // Fix: Creating a new GoogleGenAI instance right before the call per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Fix: Upgraded to gemini-3-pro-preview for complex reasoning task
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', 
+        model: 'gemini-3-pro-preview', 
         contents: {
           parts: [
             { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
@@ -109,9 +110,9 @@ export const interpretParkingSign = async (
                     explanation: { type: Type.STRING },
                     rules: { type: Type.ARRAY, items: { type: Type.STRING } },
                     permitRequired: { type: Type.BOOLEAN },
-                    permitApplied: { type: Type.STRING, nullable: true },
-                    nextStatusChange: { type: Type.STRING, nullable: true },
-                    timeRemainingMinutes: { type: Type.NUMBER, nullable: true }
+                    permitApplied: { type: Type.STRING },
+                    nextStatusChange: { type: Type.STRING },
+                    timeRemainingMinutes: { type: Type.NUMBER }
                   },
                   required: ["direction", "status", "canParkNow", "summary", "explanation", "rules", "permitRequired"]
                 }
@@ -122,6 +123,7 @@ export const interpretParkingSign = async (
         }
       });
 
+      // Fix: Directly accessing .text property as per GenerateContentResponse guidelines
       const resultText = response.text?.trim();
       if (!resultText) throw new Error("Empty AI response.");
       return JSON.parse(resultText) as ParkingInterpretation;
