@@ -27,6 +27,7 @@ const Results: React.FC<ResultsProps> = ({
 }) => {
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(initialFeedback || null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isImageFullscreen, setIsImageFullscreen] = useState(false);
   const [reportIssue, setReportIssue] = useState('');
   const [reportDescription, setReportDescription] = useState('');
   const [isSendingReport, setIsSendingReport] = useState(false);
@@ -114,10 +115,15 @@ const Results: React.FC<ResultsProps> = ({
 
   return (
     <div className="flex flex-col flex-1 animate-fade-in bg-white">
-      {/* Contextual Image Preview - Changed to 4:3 for a bigger look */}
+      {/* Contextual Image Preview */}
       <div className="relative w-full aspect-[4/3] bg-slate-900 border-b border-slate-200 overflow-hidden shrink-0">
-        <img src={image} alt="Target Sign" className="w-full h-full object-contain" />
-        <div className="absolute top-6 left-6 flex flex-col gap-2">
+        <img 
+          src={image} 
+          alt="Target Sign" 
+          className="w-full h-full object-contain cursor-zoom-in" 
+          onClick={() => setIsImageFullscreen(true)}
+        />
+        <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/20 px-3 py-1.5 rounded-full inline-flex items-center gap-2">
               <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
               <span className="text-white text-[10px] font-black uppercase tracking-[0.1em]">Vision Analysis</span>
@@ -126,11 +132,19 @@ const Results: React.FC<ResultsProps> = ({
              <span className="text-white/60 text-[9px] font-bold px-1">{formattedTimestamp}</span>
            )}
         </div>
+        
+        {/* Enlarge Hint */}
+        <div className="absolute top-6 right-6 pointer-events-none">
+          <div className="bg-white/10 backdrop-blur-md p-2 rounded-full border border-white/20 text-white/60">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+          </div>
+        </div>
+
         {onRecheck && (
            <button 
              onClick={onRecheck} 
              disabled={isRechecking} 
-             className="absolute bottom-6 right-6 bg-white/10 backdrop-blur-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl active:scale-95 transition-all flex items-center gap-2 shadow-2xl"
+             className="absolute bottom-6 right-6 z-10 bg-white/10 backdrop-blur-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl active:scale-95 transition-all flex items-center gap-2 shadow-2xl"
            >
              <svg className={`w-4 h-4 ${isRechecking ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15" /></svg>
              {isRechecking ? 'Syncing...' : 'Re-Check'}
@@ -139,17 +153,17 @@ const Results: React.FC<ResultsProps> = ({
       </div>
 
       {/* Decision Content */}
-      <div className="flex-1 -mt-10 bg-white rounded-t-[48px] px-8 pt-10 pb-8 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] relative z-20">
+      <div className="flex-1 bg-white px-8 pt-8 pb-8 relative z-20">
         <div className="max-w-md mx-auto">
           
-          {/* Directional Tabs if multiple results exist - "Fatter" slices */}
+          {/* Directional Tabs if multiple results exist */}
           {data.results.length > 1 && (
-            <div className="flex bg-slate-100 p-1.5 rounded-[24px] mb-8">
+            <div className="flex bg-slate-50 border border-slate-100 p-1.5 rounded-[24px] mb-8 shadow-sm">
               {data.results.map((res, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveIdx(idx)}
-                  className={`flex-1 py-5 px-2 rounded-[18px] text-[11px] font-black uppercase tracking-widest transition-all ${activeIdx === idx ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400'}`}
+                  className={`flex-1 py-4 px-2 rounded-[18px] text-[11px] font-black uppercase tracking-widest transition-all ${activeIdx === idx ? 'bg-white text-slate-900 shadow-md ring-1 ring-slate-100' : 'text-slate-400'}`}
                 >
                   {getDirectionLabel(res.direction)}
                 </button>
@@ -164,7 +178,6 @@ const Results: React.FC<ResultsProps> = ({
                  {activeResult.direction === 'right' && <span className="text-2xl leading-none">→</span>}
                  <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.15em]">{getDirectionLabel(activeResult.direction)}</p>
               </div>
-              {/* Reduced size from 6xl to 4xl for better mobile compatibility */}
               <h2 className={`text-4xl font-black tracking-tighter leading-none ${isAllowed ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {isAllowed ? 'ALLOWED' : 'NOPE'}
               </h2>
@@ -198,7 +211,6 @@ const Results: React.FC<ResultsProps> = ({
             ))}
           </div>
 
-          {/* Result Actions Area - Above the Global Footer - "Fatter" buttons */}
           <div className="flex items-center gap-4 py-8 border-t border-slate-100">
              <div className="flex gap-2">
                 <button 
@@ -225,6 +237,31 @@ const Results: React.FC<ResultsProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Preview */}
+      {isImageFullscreen && (
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in">
+          <button 
+            onClick={() => setIsImageFullscreen(false)} 
+            className="absolute top-10 right-8 z-50 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-90"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <div className="w-full h-full p-4 flex items-center justify-center" onClick={() => setIsImageFullscreen(false)}>
+            <img 
+              src={image} 
+              alt="Sign Detail" 
+              className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
+              onClick={(e) => e.stopPropagation()} 
+            />
+          </div>
+          {formattedTimestamp && (
+             <div className="absolute bottom-10 inset-x-0 text-center text-white/40 text-[10px] font-black uppercase tracking-[0.2em] pointer-events-none">
+                Captured: {formattedTimestamp}
+             </div>
+          )}
+        </div>
+      )}
 
       {/* Report Modal */}
       {showReportModal && (
@@ -260,7 +297,6 @@ const Results: React.FC<ResultsProps> = ({
                   
                   {reportError && <p className="text-rose-500 text-[11px] font-black uppercase text-center">{reportError}</p>}
                   
-                  {/* Image Sharing Notice */}
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center px-4 leading-relaxed">
                     Notice: Your captured image and profile name will be sent to our team to help improve AI accuracy.
                   </p>

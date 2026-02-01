@@ -54,8 +54,8 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
       {/* Viewfinder Container */}
       <div className="relative w-full aspect-[4/5] rounded-[48px] overflow-hidden bg-slate-900 shadow-2xl group border-[6px] border-white ring-1 ring-slate-200">
         
-        {/* Viewfinder Brackets */}
-        <div className="absolute inset-10 pointer-events-none z-10">
+        {/* Viewfinder Brackets - Adjusted inset to clear the bottom bar buttons */}
+        <div className="absolute top-10 left-10 right-10 bottom-36 pointer-events-none z-10">
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-500/80 rounded-tl-2xl" />
           <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-500/80 rounded-tr-2xl" />
           <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-emerald-500/80 rounded-bl-2xl" />
@@ -68,7 +68,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
         </div>
 
         {/* Backdrop Visuals */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-12 text-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-12 text-center pb-40">
            <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-[32px] flex items-center justify-center mb-8 ring-1 ring-white/10 shadow-inner">
               <svg className="w-12 h-12 text-emerald-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
