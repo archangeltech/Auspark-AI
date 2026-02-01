@@ -1,6 +1,6 @@
 
 {
-  "appId": "com.auspark.ai",
+  "appId": "com.parkingsignreader.app",
   "appName": "Parking Sign Reader",
   "webDir": "dist",
   "bundledWebRuntime": false,
