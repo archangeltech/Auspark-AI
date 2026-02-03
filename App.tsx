@@ -19,7 +19,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.0.6';
 
 const LOADING_MESSAGES = [
   "Capturing vision...",
@@ -188,7 +188,6 @@ const App: React.FC = () => {
       } else {
         return new Promise((resolve) => {
           if (!navigator.geolocation) return resolve(undefined);
-          // Fix: Use getCurrentPosition instead of getPosition which does not exist on Geolocation
           navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             () => resolve(undefined),
@@ -209,7 +208,6 @@ const App: React.FC = () => {
 
       const interpretation = await interpretParkingSign(image, timeStr, dayStr, state.profile, location);
       
-      // Handle AI-detected image quality or logic errors
       if (interpretation.errorInfo && interpretation.errorInfo.code !== 'SUCCESS') {
         setState(prev => ({ 
           ...prev, 
@@ -319,7 +317,7 @@ const App: React.FC = () => {
   const currentItem = (state.history || []).find(h => h && h.image === state.image);
 
   return (
-    <div className="h-full bg-white flex flex-col selection:bg-emerald-200 safe-pb overflow-hidden">
+    <div className="h-full bg-white flex flex-col selection:bg-emerald-200 overflow-hidden">
       <Header 
         onOpenLegal={() => setShowLegal(true)} 
         onEditProfile={() => setIsEditingProfile(true)}
@@ -329,13 +327,12 @@ const App: React.FC = () => {
       
       <main className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
         {!state.image && !state.error ? (
-          <div className="max-w-md mx-auto py-10 px-8 pb-20 w-full flex-1 flex flex-col">
-            <div className="mb-12 space-y-2">
-              <h2 className="text-[44px] font-black text-slate-900 leading-[0.95] tracking-tighter">
-                Can I park <br/>
-                <span className="text-emerald-500 italic">here?</span>
+          <div className="max-w-md mx-auto pt-5 px-8 pb-16 w-full flex-1 flex flex-col">
+            <div className="mb-6 space-y-1">
+              <h2 className="text-[32px] font-black text-slate-900 leading-tight tracking-tighter">
+                Can I park <span className="text-emerald-500 italic">here?</span>
               </h2>
-              <p className="text-slate-400 font-bold text-sm tracking-tight uppercase tracking-widest pt-1">
+              <p className="text-slate-400 font-bold text-xs tracking-tight uppercase tracking-widest pt-0.5">
                 Vision AI Sign Decoder
               </p>
             </div>
@@ -347,7 +344,7 @@ const App: React.FC = () => {
             />
 
             {(state.history || []).length > 0 && (
-              <div className="mt-16 animate-fade-in mb-8">
+              <div className="mt-12 animate-fade-in mb-8">
                 <div className="flex items-center justify-between mb-6 px-1">
                   <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Recent Scans</h3>
                   <button 
@@ -447,13 +444,13 @@ const App: React.FC = () => {
       </main>
 
       {!state.isLoading && (
-        <footer className="px-10 py-10 bg-slate-50 border-t border-slate-100 text-center shrink-0">
-             <div className="flex items-center justify-center gap-10 mb-8">
-               <button onClick={() => setShowLegal(true)} className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Legal</button>
+        <footer className="px-10 py-8 bg-slate-50 border-t border-slate-100 text-center shrink-0">
+             <div className="flex items-center justify-center gap-8 mb-5">
+               <button onClick={() => setShowLegal(true)} className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 transition-colors">Legal</button>
                <div className="w-1 h-1 bg-slate-300 rounded-full" />
-               <button onClick={() => setIsEditingProfile(true)} className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Permits</button>
+               <button onClick={() => setIsEditingProfile(true)} className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 transition-colors">Permits</button>
              </div>
-             <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase tracking-widest max-w-[280px] mx-auto mb-2">
+             <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase tracking-widest max-w-[280px] mx-auto mb-1.5">
                AI is guidance only. User is responsible for their own parking.
              </p>
              <p className="text-[9px] text-slate-300 font-black uppercase tracking-widest leading-relaxed italic">

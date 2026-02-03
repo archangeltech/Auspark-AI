@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types.ts';
 import { dbService } from '../services/dbService.ts';
@@ -107,7 +108,7 @@ ${imageUrl ? `🔗 View Image: ${imageUrl}` : ''}
 📍 Report ID: ${Date.now()}
 
 ---
-Sent from Parking Sign Reader App v1.0.5
+Sent from Parking Sign Reader App v1.0.6
       `.trim();
 
       const res = await fetch("https://api.web3forms.com/submit", {
@@ -163,12 +164,24 @@ Sent from Parking Sign Reader App v1.0.5
     }, 300);
   };
 
-  const getDirectionLabel = (dir: string) => {
-    switch (dir) {
-      case 'left': return 'Left Arrow ←';
-      case 'right': return 'Right Arrow →';
-      default: return 'General Rules';
-    }
+  const renderTabLabel = (res: DirectionalResult) => {
+    const label = res.direction === 'left' ? 'Left Arrow' : res.direction === 'right' ? 'Right Arrow' : 'General Rules';
+    
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="leading-none">{label}</span>
+        {res.direction === 'left' && (
+          <svg className="w-3 h-3 tracking-normal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        )}
+        {res.direction === 'right' && (
+          <svg className="w-3 h-3 tracking-normal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -218,14 +231,14 @@ Sent from Parking Sign Reader App v1.0.5
       </div>
 
       {data.results.length > 1 && (
-        <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex gap-2 overflow-x-auto scrollbar-hide shrink-0">
+        <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex gap-3 overflow-x-auto scrollbar-hide shrink-0">
           {data.results.map((res, idx) => (
             <button 
               key={idx} 
               onClick={() => setActiveIdx(idx)} 
-              className={`px-4 py-2 rounded-2xl font-bold text-[10px] uppercase tracking-wider whitespace-nowrap transition-all ${activeIdx === idx ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}
+              className={`px-4 py-2.5 rounded-full font-black text-[10px] uppercase tracking-wider whitespace-nowrap transition-all flex items-center justify-center ${activeIdx === idx ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-400 border border-slate-200'}`}
             >
-              {getDirectionLabel(res.direction)}
+              {renderTabLabel(res)}
             </button>
           ))}
         </div>
@@ -238,7 +251,9 @@ Sent from Parking Sign Reader App v1.0.5
               <div className="flex items-center gap-2 mb-1">
                  {activeResult.direction === 'left' && <span className="text-2xl leading-none">←</span>}
                  {activeResult.direction === 'right' && <span className="text-2xl leading-none">→</span>}
-                 <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.15em]">{getDirectionLabel(activeResult.direction)}</p>
+                 <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.15em]">
+                   {activeResult.direction === 'left' ? 'Left Arrow' : activeResult.direction === 'right' ? 'Right Arrow' : 'General Rules'}
+                 </p>
               </div>
               <h2 className={`text-4xl font-black tracking-tighter leading-none ${isAllowed ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {isAllowed ? 'ALLOWED' : 'NOPE'}
