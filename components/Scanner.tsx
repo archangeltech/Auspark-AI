@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -24,15 +25,19 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
     e.target.value = '';
   };
 
-  const triggerGallery = () => {
+  const triggerGallery = (e: React.MouseEvent) => {
+    e.stopPropagation();
     galleryInputRef.current?.click();
   };
 
-  const triggerCamera = async () => {
+  const triggerCamera = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (Capacitor.isNativePlatform()) {
       try {
         const image = await Camera.getPhoto({
-          quality: 90,
+          quality: 80, 
+          width: 1024,
+          height: 1024,
           allowEditing: false,
           resultType: CameraResultType.Base64,
           source: CameraSource.Camera
@@ -49,12 +54,28 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
     }
   };
 
+  const handleShowTips = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onShowHowToUse) onShowHowToUse();
+  };
+
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto animate-fade-in">
       {/* Viewfinder Container */}
       <div className="relative w-full aspect-[4/5] rounded-[48px] overflow-hidden bg-slate-900 shadow-2xl group border-[6px] border-white ring-1 ring-slate-200">
         
-        {/* Viewfinder Brackets - Adjusted inset to clear the bottom bar buttons */}
+        {/* Backdrop Visuals (Lower Z-Index) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-12 text-center pb-40 z-0">
+           <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-[32px] flex items-center justify-center mb-8 ring-1 ring-white/10">
+              <svg className="w-12 h-12 text-emerald-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              </svg>
+           </div>
+           <p className="text-white font-black text-2xl tracking-tighter mb-2">Ready to Decode</p>
+           <p className="text-slate-400 text-xs font-bold leading-relaxed max-w-[200px]">Align the sign for precision analysis.</p>
+        </div>
+
+        {/* Viewfinder Brackets (Pointer Events None) */}
         <div className="absolute top-10 left-10 right-10 bottom-36 pointer-events-none z-10">
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-500/80 rounded-tl-2xl" />
           <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-500/80 rounded-tr-2xl" />
@@ -67,24 +88,12 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
           )}
         </div>
 
-        {/* Backdrop Visuals */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-12 text-center pb-40">
-           <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-[32px] flex items-center justify-center mb-8 ring-1 ring-white/10 shadow-inner">
-              <svg className="w-12 h-12 text-emerald-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-           </div>
-           <p className="text-white font-black text-2xl tracking-tighter mb-2">Ready to Decode</p>
-           <p className="text-slate-400 text-xs font-bold leading-relaxed max-w-[200px]">Center the parking sign within the brackets for AI precision.</p>
-        </div>
-
-        {/* Shutter Bar Interface */}
-        <div className="absolute bottom-0 inset-x-0 p-8 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent">
-          {/* Gallery Access */}
+        {/* Interface Bar (High Z-Index to catch clicks) */}
+        <div className="absolute bottom-0 inset-x-0 p-8 pb-10 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent z-30">
           <button 
+            type="button"
             onClick={triggerGallery}
-            className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-xl"
+            className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-xl hover:bg-white/20"
             aria-label="Gallery"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,28 +101,22 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
             </svg>
           </button>
 
-          {/* Main Camera Shutter */}
           <button 
+            type="button"
             onClick={triggerCamera}
             disabled={isLoading}
-            className="relative group flex items-center justify-center p-1 bg-white rounded-full shadow-2xl active:scale-90 transition-all"
+            className="relative flex items-center justify-center p-1 bg-white rounded-full shadow-2xl active:scale-90 transition-all disabled:opacity-50"
             aria-label="Take Photo"
           >
             <div className="w-[72px] h-[72px] border-[4px] border-slate-900 rounded-full flex items-center justify-center">
-               {isLoading ? (
-                 <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-               ) : (
-                 <div className="w-12 h-12 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
-               )}
+               <div className={`w-12 h-12 bg-emerald-500 rounded-full ${isLoading ? 'animate-pulse' : ''}`} />
             </div>
-            {/* Pulsing ring */}
-            {!isLoading && <div className="absolute inset-0 rounded-full ring-4 ring-emerald-500/20 animate-pulse" />}
           </button>
 
-          {/* Tips / Info */}
           <button 
-            onClick={onShowHowToUse}
-            className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-xl"
+            type="button"
+            onClick={handleShowTips}
+            className="w-14 h-14 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-xl hover:bg-white/20"
             aria-label="Help"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,8 +126,8 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
         </div>
       </div>
 
-      {/* State Support Badge */}
-      <div className="mt-10 w-full px-4">
+      {/* State Support Badge (Restored to landing screen) */}
+      <div className="mt-8 w-full">
         <div className="flex items-center gap-4 bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm">
            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,15 +135,31 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
              </svg>
            </div>
-           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 leading-tight">
-             Optimized for <span className="text-slate-900">NSW, VIC, QLD, WA, SA, TAS, ACT, NT</span>
-           </p>
+           <div>
+             <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 leading-none mb-1.5">Optimized for States</p>
+             <p className="text-[11px] font-bold text-slate-900 tracking-tight">NSW, VIC, QLD, WA, SA, TAS, ACT, NT</p>
+           </div>
         </div>
       </div>
 
-      {/* Hidden Inputs */}
-      <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
-      <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+      {/* Hidden File Inputs */}
+      <input 
+        type="file" 
+        ref={cameraInputRef} 
+        onChange={handleFileChange} 
+        accept="image/*" 
+        capture="environment" 
+        className="hidden" 
+        aria-hidden="true"
+      />
+      <input 
+        type="file" 
+        ref={galleryInputRef} 
+        onChange={handleFileChange} 
+        accept="image/*" 
+        className="hidden" 
+        aria-hidden="true"
+      />
       
       <style>{`
         @keyframes scan {

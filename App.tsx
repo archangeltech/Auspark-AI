@@ -11,23 +11,26 @@ import Results from './components/Results.tsx';
 import Onboarding from './components/Onboarding.tsx';
 import LegalModal from './components/LegalModal.tsx';
 import AppSettingsModal from './components/AppSettingsModal.tsx';
+import HowToUseModal from './components/HowToUseModal.tsx';
 import { AppState, HistoryItem, UserProfile } from './types.ts';
 import { interpretParkingSign } from './services/geminiService.ts';
 import { dbService } from './services/dbService.ts';
+import { compressForHistory } from './services/imageUtils.ts';
 
 const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.0.6';
+const APP_VERSION = '1.0.7';
+const MAX_HISTORY_ITEMS = 8; // Increased now that we use thumbnails!
 
 const LOADING_MESSAGES = [
-  "Capturing vision...",
-  "Analyzing rules...",
-  "Interpreting hierarchy...",
-  "Checking time limits...",
-  "Applying permits...",
-  "Logic confirmed."
+  "Looking at the photo...",
+  "Reading the sign...",
+  "Checking the rules...",
+  "Working out the time...",
+  "Checking your permits...",
+  "Almost ready!"
 ];
 
 const App: React.FC = () => {
@@ -40,6 +43,7 @@ const App: React.FC = () => {
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [resetKey, setResetKey] = useState<number>(0);
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
   
   const retakeCameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,7 +99,7 @@ const App: React.FC = () => {
         setLastAcceptedDate(savedLegal);
       }
     } catch (e) {
-      console.warn("Storage recovery: Resetting corrupted local data.");
+      console.warn("Recovery: Local data reset.");
     }
   }, []);
 
@@ -124,6 +128,26 @@ const App: React.FC = () => {
     });
   };
 
+  /**
+   * Safe save helper for localStorage.
+   */
+  const safeSaveHistory = (historyItems: HistoryItem[]) => {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(historyItems));
+      setStorageWarning(null);
+    } catch (e) {
+      // Emergency pruning
+      const pruned = historyItems.slice(0, 2);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(pruned));
+        setStorageWarning("Storage limited. Keeping only latest scans.");
+      } catch (e2) {
+        localStorage.removeItem(HISTORY_KEY);
+        setStorageWarning("Storage critical. History disabled.");
+      }
+    }
+  };
+
   const saveProfile = async (profile: UserProfile) => {
     setIsSaving(true);
     try {
@@ -140,7 +164,9 @@ const App: React.FC = () => {
       setShowOnboarding(false);
       setIsEditingProfile(false);
     } catch (error) {
-      console.error("Failed to save profile:", error);
+      setStorageWarning("Storage full. Could not save profile.");
+      setShowOnboarding(false);
+      setIsEditingProfile(false);
     } finally {
       setIsSaving(false);
     }
@@ -217,26 +243,35 @@ const App: React.FC = () => {
         return;
       }
 
+      // REDUCE QUALITY FOR HISTORY STORAGE
+      // We keep the original in current session state for display, but save thumbnail to history
+      const thumbnail = await compressForHistory(image, 180);
+
       const newHistoryItem: HistoryItem = {
         id: Date.now().toString(),
         timestamp: Date.now(),
-        image,
+        image: thumbnail, // Save tiny thumbnail to storage
         interpretation,
       };
 
-      const updatedHistory = [newHistoryItem, ...(state.history || [])].slice(0, 15);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
+      const updatedHistory = [newHistoryItem, ...(state.history || [])].slice(0, MAX_HISTORY_ITEMS);
+      
+      safeSaveHistory(updatedHistory);
 
       setState(prev => ({
         ...prev,
-        image,
+        image, // Keep high quality for current results view
         interpretation,
         isLoading: false,
         history: updatedHistory,
         error: null
       }));
     } catch (err: any) {
-      setState(prev => ({ ...prev, isLoading: false, error: err.message || "Network Error. Please check your connection and try again." }));
+      setState(prev => ({ 
+        ...prev, 
+        isLoading: false, 
+        error: "Analysis failed. Please try again."
+      }));
     }
   };
 
@@ -253,7 +288,9 @@ const App: React.FC = () => {
     if (Capacitor.isNativePlatform()) {
       try {
         const image = await Camera.getPhoto({
-          quality: 90,
+          quality: 60, // Better quality for AI analysis
+          width: 1024,
+          height: 1024,
           allowEditing: false,
           resultType: CameraResultType.Base64,
           source: CameraSource.Camera
@@ -285,17 +322,18 @@ const App: React.FC = () => {
   const handleFeedback = (type: 'up' | 'down') => {
     if (!state.image) return;
     const updatedHistory = (state.history || []).map(item => {
-      if (item && item.image === state.image) return { ...item, feedback: type };
+      // In history, we match by timestamp or something more reliable if image is compressed
+      if (item && item.interpretation === state.interpretation) return { ...item, feedback: type };
       return item;
     });
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
+    safeSaveHistory(updatedHistory);
     setState(prev => ({ ...prev, history: updatedHistory }));
   };
 
   const deleteHistoryItem = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const updated = (state.history || []).filter(item => item && item.id !== id);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    safeSaveHistory(updated);
     setState(prev => ({ ...prev, history: updated }));
   };
 
@@ -314,8 +352,6 @@ const App: React.FC = () => {
     );
   }
 
-  const currentItem = (state.history || []).find(h => h && h.image === state.image);
-
   return (
     <div className="h-full bg-white flex flex-col selection:bg-emerald-200 overflow-hidden">
       <Header 
@@ -326,6 +362,13 @@ const App: React.FC = () => {
       />
       
       <main className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+        {storageWarning && (
+          <div className="mx-8 mt-4 bg-slate-900 text-white px-4 py-2.5 rounded-2xl flex items-center justify-between animate-fade-in shadow-lg">
+             <p className="text-[10px] font-black uppercase tracking-widest">{storageWarning}</p>
+             <button onClick={() => setStorageWarning(null)} className="text-white/40"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg></button>
+          </div>
+        )}
+
         {!state.image && !state.error ? (
           <div className="max-w-md mx-auto pt-5 px-8 pb-16 w-full flex-1 flex flex-col">
             <div className="mb-6 space-y-1">
@@ -362,7 +405,7 @@ const App: React.FC = () => {
                       <div key={item.id} className="relative shrink-0">
                         <button
                           onClick={() => setState(prev => ({ ...prev, image: item.image, interpretation: item.interpretation, error: null }))}
-                          className="w-36 aspect-[3/4] rounded-[40px] overflow-hidden border-2 border-slate-50 shadow-2xl active:scale-95 transition-all block relative"
+                          className="w-36 aspect-[3/4] rounded-[40px] overflow-hidden border-2 border-slate-50 shadow-2xl active:scale-95 transition-all block relative bg-slate-100"
                         >
                           <img src={item.image} className="w-full h-full object-cover" alt="Scan" />
                           <div className={`absolute bottom-0 inset-x-0 h-1.5 ${canPark ? 'bg-emerald-500' : 'bg-rose-500'}`} />
@@ -392,40 +435,26 @@ const App: React.FC = () => {
                  </svg>
               </div>
               <div className="space-y-4 max-w-xs">
-                <div className="bg-emerald-100/50 text-emerald-700 px-5 py-2 rounded-full inline-block text-[11px] font-black uppercase tracking-widest mb-4">Processing Vision</div>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight min-h-[72px] flex items-center justify-center">
+                <div className="bg-emerald-100/50 text-emerald-700 px-5 py-2 rounded-full inline-block text-[11px] font-black uppercase tracking-widest mb-4">Vision Analysis</div>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight min-h-[72px] flex items-center justify-center mb-4">
                    <span key={loadingMsgIdx} className="animate-fade-in">{LOADING_MESSAGES[loadingMsgIdx]}</span>
                 </h3>
-                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-6">Stay patient while we think...</p>
+                
+                <div className="mt-8 px-6 py-4 bg-amber-50 border border-amber-100 rounded-[24px] animate-pulse">
+                  <p className="text-[10px] font-black text-amber-700 uppercase tracking-[0.15em] leading-relaxed">
+                    Please don't minimize the app until the scan is complete for AI to finish running.
+                  </p>
+                </div>
               </div>
            </div>
         ) : state.error ? (
           <div className="p-12 text-center flex flex-col items-center justify-center min-h-[80vh] animate-fade-in max-w-md mx-auto">
-            <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-[32px] flex items-center justify-center mb-10 shadow-inner ring-1 ring-rose-100">
+            <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-[32px] flex items-center justify-center mb-10 shadow-inner">
               <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </div>
             <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-4">Analysis Failed</h3>
-            <div className="bg-rose-50/50 border border-rose-100 rounded-[32px] p-6 mb-12">
-              <p className="text-slate-700 font-bold text-lg leading-snug">{state.error}</p>
-            </div>
-            <div className="flex flex-col w-full gap-4">
-              <button 
-                onClick={handleRetakePhoto} 
-                className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
-                Retake Photo
-              </button>
-              <button 
-                onClick={() => {
-                  setState(prev => ({ ...prev, error: null, image: null }));
-                }}
-                className="w-full bg-white text-slate-400 h-16 rounded-[28px] font-black text-sm uppercase tracking-[0.2em] hover:text-slate-600 transition-all"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-            {/* Hidden Input for Web Fallback */}
+            <p className="text-slate-500 font-bold mb-12">{state.error}</p>
+            <button onClick={handleRetakePhoto} className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black text-xl shadow-2xl active:scale-95 transition-all">Try Again</button>
             <input type="file" ref={retakeCameraInputRef} onChange={handleRetakeFileChange} accept="image/*" capture="environment" className="hidden" />
           </div>
         ) : state.interpretation && state.image ? (
@@ -436,8 +465,7 @@ const App: React.FC = () => {
             onRecheck={handleRecheck}
             onFeedback={handleFeedback}
             isRechecking={state.isLoading}
-            initialFeedback={currentItem?.feedback}
-            scanTimestamp={currentItem?.timestamp}
+            scanTimestamp={Date.now()}
             profile={state.profile}
           />
         ) : null}
@@ -461,39 +489,7 @@ const App: React.FC = () => {
 
       <LegalModal isOpen={showLegal} onClose={() => setShowLegal(false)} lastAcceptedDate={lastAcceptedDate} onAccept={handleAcceptLegal} />
       <AppSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} userEmail={state.profile.email} />
-
-      {showHowToUse && (
-        <div className="fixed inset-0 z-[10000] grid place-items-center p-6">
-          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={() => setShowHowToUse(false)} />
-          <div className="relative bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto max-h-[90vh]">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tighter">Scanning Tips</h2>
-              <button onClick={() => setShowHowToUse(false)} className="p-2 text-slate-400">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="px-8 pb-8 pt-6 space-y-6 overflow-hidden">
-              <div className="space-y-5">
-                {[
-                  { icon: '🎯', title: 'Frame it', text: 'Align the sign inside the emerald brackets.' },
-                  { icon: '📸', title: 'Steady shot', text: 'Wait for focus. Avoid lens flare or deep shadows.' },
-                  { icon: '🚥', title: 'One Pole', text: 'Scan one pole at a time for the best accuracy.' },
-                  { icon: '🛂', title: 'Set Permits', text: 'Ensure your resident zones are set in your profile.' }
-                ].map((step, idx) => (
-                  <div key={idx} className="flex gap-5 items-start">
-                    <div className="text-3xl shrink-0 pt-0.5">{step.icon}</div>
-                    <div>
-                      <p className="font-black text-slate-900 text-lg tracking-tight leading-none mb-1">{step.title}</p>
-                      <p className="text-[13px] font-bold text-slate-500 leading-snug">{step.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => setShowHowToUse(false)} className="w-full bg-emerald-500 text-white h-16 rounded-[28px] font-black text-lg shadow-2xl shadow-emerald-100 active:scale-95 transition-all mt-4">Start Scanning</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <HowToUseModal isOpen={showHowToUse} onClose={() => setShowHowToUse(false)} />
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ParkingInterpretation, UserProfile } from "../types.ts";
 
@@ -14,10 +15,11 @@ export const interpretParkingSign = async (
 
   if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
     throw new Error(
-      "API Key is missing. For mobile apps (Android/iOS), the API_KEY must be set as an environment variable on your computer when running 'npm run build' so it can be baked into the app."
+      "Missing API Key. Please add your key in the settings to start scanning."
     );
   }
 
+  // Ensure clean base64 data for the API
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
   const locationContext = location 
@@ -38,44 +40,28 @@ export const interpretParkingSign = async (
     Analyze the provided image of Australian parking sign(s).
     
     TASK 1: VALIDATE IMAGE QUALITY & CONTENT
-    Before interpreting, check for failure scenarios. If one is found, set code to the appropriate value (BLURRY, NO_SIGN, MULTIPLE_SIGNS, or AMBIGUOUS) and provide a helpful message and suggestion.
-    1. BLURRY: The image is unreadable, out of focus, or obscured by glare.
-       Message: "We can't read the text in this photo."
-       Suggestion: "Try holding the camera steady and wait for it to focus."
-    2. NO_SIGN: There is no Australian parking sign visible in the image.
-       Message: "This doesn't look like a parking sign."
-       Suggestion: "Please ensure the sign is fully visible within the frame."
-    3. MULTIPLE_SIGNS: Multiple different sign poles are in the image, causing confusion.
-       Message: "There are too many signs in one photo."
-       Suggestion: "Try scanning just one pole at a time for better accuracy."
-    4. AMBIGUOUS: Conflicting rules or obscured arrows make it unsafe to guess.
-       Message: "The parking rules here are too complex to read clearly."
-       Suggestion: "Try taking a closer photo of the specific sign you're looking at."
+    If you cannot read the sign clearly, set the code below and explain why in SIMPLE ENGLISH.
+    1. BLURRY: The photo is too blurry or has too much glare.
+    2. NO_SIGN: I can't see an Australian parking sign in this photo.
+    3. MULTIPLE_SIGNS: There are too many different sign poles. Try to scan just one.
+    4. AMBIGUOUS: The signs are confusing or blocked.
 
     TASK 2: INTERPRET RULES (If code is SUCCESS)
-    If the image is clear, detect Arrows (Left/Right) and apply rules:
-    - Current Time: ${currentTime}
-    - Current Day: ${userDay}
-    - ${locationContext}
+    Current Time: ${currentTime}
+    Current Day: ${userDay}
+    ${locationContext}
     ${permitContext}
 
-    LANGUAGE STYLE:
-    Use natural, clear, non-technical English in 'summary' and 'explanation'.
-    - Convert "1P", "2P", "1/2P" into "1 hour", "2 hours", "30 minutes".
-    - Convert "Metered", "Meter", or "Ticket" into "paid parking".
-    - Convert "No Standing" into "No stopping or waiting".
-
+    LANGUAGE STYLE: Use very simple English. Avoid technical jargon. Instead of "1P", say "1 hour". Instead of "Metered", say "Paid parking".
     OUTPUT: Return JSON with errorInfo and results.
   `;
 
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2;
   let lastError: any = null;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // Fix: Creating a new GoogleGenAI instance right before the call per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Fix: Upgraded to gemini-3-pro-preview for complex reasoning task
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview', 
         contents: {
@@ -123,31 +109,35 @@ export const interpretParkingSign = async (
         }
       });
 
-      // Fix: Directly accessing .text property as per GenerateContentResponse guidelines
       const resultText = response.text?.trim();
-      if (!resultText) throw new Error("Empty AI response.");
+      if (!resultText) throw new Error("The AI didn't give an answer. Please try again.");
       return JSON.parse(resultText) as ParkingInterpretation;
 
     } catch (error: any) {
       lastError = error;
-      const errorStr = JSON.stringify(error).toLowerCase();
-      const isOverloaded = errorStr.includes('503') || 
-                           errorStr.includes('overloaded') || 
-                           errorStr.includes('unavailable') ||
-                           errorStr.includes('429') || 
-                           error.message?.toLowerCase().includes('overloaded');
+      const errorStr = String(error).toLowerCase();
+      
+      const isNetworkError = error instanceof TypeError || errorStr.includes('fetch') || errorStr.includes('network');
+      const isOverloaded = errorStr.includes('503') || errorStr.includes('overloaded') || errorStr.includes('429');
 
-      if (isOverloaded && attempt < MAX_RETRIES) {
-        const backoffTime = Math.pow(2, attempt) * 1000;
-        console.warn(`Gemini overloaded (Attempt ${attempt + 1}/${MAX_RETRIES + 1}). Retrying in ${backoffTime}ms...`);
+      if ((isNetworkError || isOverloaded) && attempt < MAX_RETRIES) {
+        const backoffTime = Math.pow(2, attempt) * 1000 + (Math.random() * 500);
+        console.warn(`Retrying... (Attempt ${attempt + 1})`);
         await sleep(backoffTime);
         continue;
       }
       
-      console.error("Gemini Final Error:", error);
+      if (isNetworkError) {
+        throw new Error("Internet Lost. We couldn't talk to our servers. Please check your signal or Wi-Fi.");
+      }
+
+      if (isOverloaded) {
+        throw new Error("AI is Busy. Too many people are scanning signs right now. Please wait a moment and try again.");
+      }
+      
       throw error;
     }
   }
 
-  throw lastError || new Error("Unknown error during sign analysis.");
+  throw lastError || new Error("Something went wrong. Please try scanning the sign again.");
 };

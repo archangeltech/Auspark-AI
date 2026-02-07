@@ -108,7 +108,7 @@ ${imageUrl ? `🔗 View Image: ${imageUrl}` : ''}
 📍 Report ID: ${Date.now()}
 
 ---
-Sent from Parking Sign Reader App v1.0.6
+Sent from Parking Sign Reader App v1.0.7
       `.trim();
 
       const res = await fetch("https://api.web3forms.com/submit", {
