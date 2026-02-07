@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types.ts';
 import { dbService } from '../services/dbService.ts';
@@ -192,8 +191,16 @@ const Results: React.FC<ResultsProps> = ({
               <h2 className={`text-4xl font-black tracking-tighter leading-none ${isAllowed ? 'text-emerald-500' : 'text-rose-500'}`}>{isAllowed ? 'ALLOWED' : 'NOPE'}</h2>
               <p className="text-slate-400 font-black uppercase text-xs tracking-[0.15em]">{activeResult.summary}</p>
             </div>
-            <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl ${isAllowed ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-               {isAllowed ? <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg> : <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M6 18L18 6M6 6l12 12" /></svg>}
+            <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl transition-colors ${isAllowed ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+               {isAllowed ? (
+                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4.5" d="M5 13l4 4L19 7" />
+                 </svg>
+               ) : (
+                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4.5" d="M6 18L18 6M6 6l12 12" />
+                 </svg>
+               )}
             </div>
           </div>
 

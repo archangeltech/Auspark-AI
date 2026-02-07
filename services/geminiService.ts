@@ -56,9 +56,10 @@ export const interpretParkingSign = async (
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       // Create a fresh instance for each attempt to ensure the latest API key is used
+      // Switched to gemini-3-flash-preview for maximum performance and lower latency
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
+        model: 'gemini-3-flash-preview', 
         contents: {
           parts: [
             { inlineData: { mimeType: 'image/jpeg', data: base64Data } },

@@ -15,7 +15,7 @@ import HowToUseModal from './components/HowToUseModal.tsx';
 import { AppState, HistoryItem, UserProfile } from './types.ts';
 import { interpretParkingSign } from './services/geminiService.ts';
 import { dbService } from './services/dbService.ts';
-import { compressForHistory } from './services/imageUtils.ts';
+import { compressForHistory, compressForAnalysis } from './services/imageUtils.ts';
 
 const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
@@ -144,6 +144,13 @@ const App: React.FC = () => {
     }
   };
 
+  const handleClearHistory = () => {
+    if (window.confirm("Clear all recent scans? This cannot be undone.")) {
+      localStorage.removeItem(HISTORY_KEY);
+      setState(prev => ({ ...prev, history: [] }));
+    }
+  };
+
   const saveProfile = async (profile: UserProfile) => {
     setIsSaving(true);
     try {
@@ -223,12 +230,16 @@ const App: React.FC = () => {
   const performAnalysis = async (image: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
+      // Pre-optimize image for transmission speed
+      const optimizedImage = await compressForAnalysis(image);
+      
       const location = await getLocation();
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
       const dayStr = now.toLocaleDateString('en-AU', { weekday: 'long' });
 
-      const interpretation = await interpretParkingSign(image, timeStr, dayStr, state.profile, location);
+      // Send the optimized image to Gemini Flash
+      const interpretation = await interpretParkingSign(optimizedImage, timeStr, dayStr, state.profile, location);
       
       if (interpretation.errorInfo && interpretation.errorInfo.code !== 'SUCCESS') {
         setState(prev => ({ 
@@ -239,7 +250,7 @@ const App: React.FC = () => {
         return;
       }
 
-      const thumbnail = await compressForHistory(image, 180);
+      const thumbnail = await compressForHistory(optimizedImage, 180);
 
       const newHistoryItem: HistoryItem = {
         id: Date.now().toString(),
@@ -254,7 +265,7 @@ const App: React.FC = () => {
 
       setState(prev => ({
         ...prev,
-        image, 
+        image: optimizedImage, 
         interpretation,
         isLoading: false,
         history: updatedHistory,
@@ -297,7 +308,6 @@ const App: React.FC = () => {
         console.error('Camera error:', error);
       }
     } else {
-      // Fix: Changed cameraInputRef to retakeCameraInputRef to match the local ref definition
       retakeCameraInputRef.current?.click();
     }
   };
@@ -425,7 +435,12 @@ const App: React.FC = () => {
               <div className="mt-12 animate-fade-in mb-8">
                 <div className="flex items-center justify-between mb-6 px-1">
                   <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Recent Scans</h3>
-                  <button onClick={() => { if(confirm("Clear history?")) { localStorage.removeItem(HISTORY_KEY); setState(prev => ({ ...prev, history: [] })); } }} className="text-[11px] font-black text-rose-500 uppercase tracking-wider">Clear All</button>
+                  <button 
+                    onClick={handleClearHistory} 
+                    className="text-[11px] font-black text-rose-500 uppercase tracking-wider active:opacity-50 transition-opacity"
+                  >
+                    Clear All
+                  </button>
                 </div>
                 <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide -mx-1 px-1">
                   {(state.history || []).filter(Boolean).map((item) => {
