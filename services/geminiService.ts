@@ -11,13 +11,7 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  const apiKey = process.env.API_KEY;
-
-  if (!apiKey || apiKey === "undefined" || apiKey.trim() === "") {
-    throw new Error(
-      "Missing API Key. Please add your key in the settings to start scanning."
-    );
-  }
+  // Manual API key check removed as process.env.API_KEY is assumed to be pre-configured.
 
   // Ensure clean base64 data for the API
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
@@ -61,6 +55,7 @@ export const interpretParkingSign = async (
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // Create a fresh instance for each attempt to ensure the latest API key is used
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview', 
@@ -109,6 +104,7 @@ export const interpretParkingSign = async (
         }
       });
 
+      // Extract text output using the correct property access
       const resultText = response.text?.trim();
       if (!resultText) throw new Error("The AI didn't give an answer. Please try again.");
       return JSON.parse(resultText) as ParkingInterpretation;

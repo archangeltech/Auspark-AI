@@ -46,8 +46,12 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
         if (image.base64String) {
           onImageSelected(`data:image/${image.format};base64,${image.base64String}`);
         }
-      } catch (error) {
-        console.error('Camera error:', error);
+      } catch (error: any) {
+        // Handle common Capacitor/Mobile errors
+        if (error.message.includes('User cancelled') || error.message.includes('cancelled')) {
+           return;
+        }
+        alert("Camera Error: Please ensure you've granted camera permissions in your device settings to scan signs.");
       }
     } else {
       cameraInputRef.current?.click();
@@ -64,7 +68,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
       {/* Viewfinder Container */}
       <div className="relative w-full aspect-[4/5] rounded-[48px] overflow-hidden bg-slate-900 shadow-2xl group border-[6px] border-white ring-1 ring-slate-200">
         
-        {/* Backdrop Visuals (Lower Z-Index) */}
+        {/* Backdrop Visuals */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-12 text-center pb-40 z-0">
            <div className="w-24 h-24 bg-white/5 backdrop-blur-md rounded-[32px] flex items-center justify-center mb-8 ring-1 ring-white/10">
               <svg className="w-12 h-12 text-emerald-400 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,20 +79,15 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
            <p className="text-slate-400 text-xs font-bold leading-relaxed max-w-[200px]">Align the sign for precision analysis.</p>
         </div>
 
-        {/* Viewfinder Brackets (Pointer Events None) */}
+        {/* Viewfinder Brackets */}
         <div className="absolute top-10 left-10 right-10 bottom-36 pointer-events-none z-10">
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-emerald-500/80 rounded-tl-2xl" />
           <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-emerald-500/80 rounded-tr-2xl" />
           <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-emerald-500/80 rounded-bl-2xl" />
           <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-emerald-500/80 rounded-br-2xl" />
-          
-          {/* Animated Scanning Line */}
-          {isLoading && (
-            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.8)] animate-[scan_2s_linear_infinite] rounded-full z-20" />
-          )}
         </div>
 
-        {/* Interface Bar (High Z-Index to catch clicks) */}
+        {/* Interface Bar */}
         <div className="absolute bottom-0 inset-x-0 p-8 pb-10 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent z-30">
           <button 
             type="button"
@@ -126,7 +125,7 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
         </div>
       </div>
 
-      {/* State Support Badge (Restored to landing screen) */}
+      {/* State Support Badge */}
       <div className="mt-8 w-full">
         <div className="flex items-center gap-4 bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm">
            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
@@ -143,32 +142,8 @@ const Scanner: React.FC<ScannerProps> = ({ onImageSelected, isLoading, onShowHow
       </div>
 
       {/* Hidden File Inputs */}
-      <input 
-        type="file" 
-        ref={cameraInputRef} 
-        onChange={handleFileChange} 
-        accept="image/*" 
-        capture="environment" 
-        className="hidden" 
-        aria-hidden="true"
-      />
-      <input 
-        type="file" 
-        ref={galleryInputRef} 
-        onChange={handleFileChange} 
-        accept="image/*" 
-        className="hidden" 
-        aria-hidden="true"
-      />
-      
-      <style>{`
-        @keyframes scan {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-      `}</style>
+      <input type="file" ref={cameraInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" aria-hidden="true" />
+      <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*" className="hidden" aria-hidden="true" />
     </div>
   );
 };

@@ -22,7 +22,7 @@ const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
 const APP_VERSION = '1.0.7';
-const MAX_HISTORY_ITEMS = 8; // Increased now that we use thumbnails!
+const MAX_HISTORY_ITEMS = 8; 
 
 const LOADING_MESSAGES = [
   "Looking at the photo...",
@@ -128,15 +128,11 @@ const App: React.FC = () => {
     });
   };
 
-  /**
-   * Safe save helper for localStorage.
-   */
   const safeSaveHistory = (historyItems: HistoryItem[]) => {
     try {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(historyItems));
       setStorageWarning(null);
     } catch (e) {
-      // Emergency pruning
       const pruned = historyItems.slice(0, 2);
       try {
         localStorage.setItem(HISTORY_KEY, JSON.stringify(pruned));
@@ -243,14 +239,12 @@ const App: React.FC = () => {
         return;
       }
 
-      // REDUCE QUALITY FOR HISTORY STORAGE
-      // We keep the original in current session state for display, but save thumbnail to history
       const thumbnail = await compressForHistory(image, 180);
 
       const newHistoryItem: HistoryItem = {
         id: Date.now().toString(),
         timestamp: Date.now(),
-        image: thumbnail, // Save tiny thumbnail to storage
+        image: thumbnail, 
         interpretation,
       };
 
@@ -260,7 +254,7 @@ const App: React.FC = () => {
 
       setState(prev => ({
         ...prev,
-        image, // Keep high quality for current results view
+        image, 
         interpretation,
         isLoading: false,
         history: updatedHistory,
@@ -288,7 +282,7 @@ const App: React.FC = () => {
     if (Capacitor.isNativePlatform()) {
       try {
         const image = await Camera.getPhoto({
-          quality: 60, // Better quality for AI analysis
+          quality: 60, 
           width: 1024,
           height: 1024,
           allowEditing: false,
@@ -303,6 +297,7 @@ const App: React.FC = () => {
         console.error('Camera error:', error);
       }
     } else {
+      // Fix: Changed cameraInputRef to retakeCameraInputRef to match the local ref definition
       retakeCameraInputRef.current?.click();
     }
   };
@@ -322,7 +317,6 @@ const App: React.FC = () => {
   const handleFeedback = (type: 'up' | 'down') => {
     if (!state.image) return;
     const updatedHistory = (state.history || []).map(item => {
-      // In history, we match by timestamp or something more reliable if image is compressed
       if (item && item.interpretation === state.interpretation) return { ...item, feedback: type };
       return item;
     });
@@ -361,7 +355,7 @@ const App: React.FC = () => {
         onLogoClick={handleReset}
       />
       
-      <main className="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+      <main className="flex-1 flex flex-col overflow-y-auto scrollbar-hide relative">
         {storageWarning && (
           <div className="mx-8 mt-4 bg-slate-900 text-white px-4 py-2.5 rounded-2xl flex items-center justify-between animate-fade-in shadow-lg">
              <p className="text-[10px] font-black uppercase tracking-widest">{storageWarning}</p>
@@ -369,7 +363,52 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {!state.image && !state.error ? (
+        {state.isLoading ? (
+           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-fade-in relative overflow-hidden">
+              {/* Dynamic Blurred Background using captured image */}
+              {state.image && (
+                <div className="absolute inset-0 z-0 opacity-10">
+                  <img src={state.image} className="w-full h-full object-cover blur-3xl grayscale" alt="Blur Background" />
+                </div>
+              )}
+
+              <div className="relative z-10 w-full max-sm flex flex-col items-center">
+                <div className="relative w-full aspect-square rounded-[64px] overflow-hidden bg-slate-900 shadow-2xl mb-8 border-8 border-white">
+                  {state.image && <img src={state.image} className="w-full h-full object-cover grayscale brightness-50" alt="Captured" />}
+                  <div className="absolute top-10 left-10 right-10 bottom-10 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-500 rounded-tl-xl" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-500 rounded-tr-xl" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-500 rounded-bl-xl" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-500 rounded-br-xl" />
+                  </div>
+                  {/* Scanning Animation Line */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.8)] animate-[scan_2.5s_linear_infinite] rounded-full z-20" />
+                </div>
+
+                <div className="space-y-2 max-w-xs flex flex-col items-center">
+                  <div className="bg-emerald-100/50 text-emerald-700 px-5 py-2 rounded-full inline-block text-[11px] font-black uppercase tracking-widest mb-0.5">Vision Analysis</div>
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight min-h-[48px]">
+                    <span key={loadingMsgIdx} className="animate-fade-in inline-block">{LOADING_MESSAGES[loadingMsgIdx]}</span>
+                  </h3>
+                  
+                  <div className="px-6 py-2.5 bg-amber-50 border border-amber-100 rounded-[24px] animate-pulse shadow-sm w-full">
+                    <p className="text-[10px] font-black text-amber-700 uppercase tracking-[0.1em] leading-relaxed">
+                      Analyzing sign... Keep app open to finish.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <style>{`
+                @keyframes scan {
+                  0% { top: 10%; opacity: 0; }
+                  15% { opacity: 1; }
+                  85% { opacity: 1; }
+                  100% { top: 90%; opacity: 0; }
+                }
+              `}</style>
+           </div>
+        ) : !state.image && !state.error ? (
           <div className="max-w-md mx-auto pt-5 px-8 pb-16 w-full flex-1 flex flex-col">
             <div className="mb-6 space-y-1">
               <h2 className="text-[32px] font-black text-slate-900 leading-tight tracking-tighter">
@@ -380,22 +419,13 @@ const App: React.FC = () => {
               </p>
             </div>
 
-            <Scanner 
-              onImageSelected={handleImageSelected} 
-              isLoading={state.isLoading}
-              onShowHowToUse={() => setShowHowToUse(true)}
-            />
+            <Scanner onImageSelected={handleImageSelected} isLoading={state.isLoading} onShowHowToUse={() => setShowHowToUse(true)} />
 
             {(state.history || []).length > 0 && (
               <div className="mt-12 animate-fade-in mb-8">
                 <div className="flex items-center justify-between mb-6 px-1">
                   <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Recent Scans</h3>
-                  <button 
-                    onClick={() => { if(confirm("Clear history?")) { localStorage.removeItem(HISTORY_KEY); setState(prev => ({ ...prev, history: [] })); } }}
-                    className="text-[11px] font-black text-rose-500 uppercase tracking-wider"
-                  >
-                    Clear All
-                  </button>
+                  <button onClick={() => { if(confirm("Clear history?")) { localStorage.removeItem(HISTORY_KEY); setState(prev => ({ ...prev, history: [] })); } }} className="text-[11px] font-black text-rose-500 uppercase tracking-wider">Clear All</button>
                 </div>
                 <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide -mx-1 px-1">
                   {(state.history || []).filter(Boolean).map((item) => {
@@ -403,22 +433,11 @@ const App: React.FC = () => {
                     const canPark = Array.isArray(results) && results.some(r => r?.canParkNow === true);
                     return (
                       <div key={item.id} className="relative shrink-0">
-                        <button
-                          onClick={() => setState(prev => ({ ...prev, image: item.image, interpretation: item.interpretation, error: null }))}
-                          className="w-36 aspect-[3/4] rounded-[40px] overflow-hidden border-2 border-slate-50 shadow-2xl active:scale-95 transition-all block relative bg-slate-100"
-                        >
+                        <button onClick={() => setState(prev => ({ ...prev, image: item.image, interpretation: item.interpretation, error: null }))} className="w-36 aspect-[3/4] rounded-[40px] overflow-hidden border-2 border-slate-50 shadow-2xl active:scale-95 transition-all block relative bg-slate-100">
                           <img src={item.image} className="w-full h-full object-cover" alt="Scan" />
                           <div className={`absolute bottom-0 inset-x-0 h-1.5 ${canPark ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                          <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-black border-2 border-white/20 backdrop-blur-md ${canPark ? 'bg-emerald-500/80' : 'bg-rose-500/80'}`}>
-                            {canPark ? '✓' : '✕'}
-                          </div>
                         </button>
-                        <button 
-                          onClick={(e) => deleteHistoryItem(item.id, e)}
-                          className="absolute -top-3 -right-3 bg-white text-slate-400 rounded-full p-2.5 shadow-xl border border-slate-100 z-10 active:scale-90"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                        <button onClick={(e) => deleteHistoryItem(item.id, e)} className="absolute -top-3 -right-3 bg-white text-slate-400 rounded-full p-2.5 shadow-xl border border-slate-100 z-10 active:scale-90"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg></button>
                       </div>
                     );
                   })}
@@ -426,27 +445,6 @@ const App: React.FC = () => {
               </div>
             )}
           </div>
-        ) : state.isLoading ? (
-           <div className="flex flex-col items-center justify-center min-h-[75vh] p-10 text-center animate-fade-in bg-white">
-              <div className="w-32 h-32 bg-emerald-50 rounded-[48px] flex items-center justify-center mb-12 relative shadow-inner">
-                 <div className="absolute inset-0 border-[10px] border-emerald-500 border-t-transparent rounded-[48px] animate-spin" />
-                 <svg className="w-14 h-14 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                 </svg>
-              </div>
-              <div className="space-y-4 max-w-xs">
-                <div className="bg-emerald-100/50 text-emerald-700 px-5 py-2 rounded-full inline-block text-[11px] font-black uppercase tracking-widest mb-4">Vision Analysis</div>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight min-h-[72px] flex items-center justify-center mb-4">
-                   <span key={loadingMsgIdx} className="animate-fade-in">{LOADING_MESSAGES[loadingMsgIdx]}</span>
-                </h3>
-                
-                <div className="mt-8 px-6 py-4 bg-amber-50 border border-amber-100 rounded-[24px] animate-pulse">
-                  <p className="text-[10px] font-black text-amber-700 uppercase tracking-[0.15em] leading-relaxed">
-                    Please don't minimize the app until the scan is complete for AI to finish running.
-                  </p>
-                </div>
-              </div>
-           </div>
         ) : state.error ? (
           <div className="p-12 text-center flex flex-col items-center justify-center min-h-[80vh] animate-fade-in max-w-md mx-auto">
             <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-[32px] flex items-center justify-center mb-10 shadow-inner">
@@ -459,14 +457,9 @@ const App: React.FC = () => {
           </div>
         ) : state.interpretation && state.image ? (
           <Results 
-            data={state.interpretation} 
-            image={state.image} 
-            onReset={handleReset} 
-            onRecheck={handleRecheck}
-            onFeedback={handleFeedback}
-            isRechecking={state.isLoading}
-            scanTimestamp={Date.now()}
-            profile={state.profile}
+            data={state.interpretation} image={state.image} 
+            onReset={handleReset} onRecheck={handleRecheck} onFeedback={handleFeedback}
+            isRechecking={state.isLoading} scanTimestamp={Date.now()} profile={state.profile}
           />
         ) : null}
       </main>
