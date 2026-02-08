@@ -11,8 +11,6 @@ export const interpretParkingSign = async (
   profile: UserProfile,
   location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
-  // Manual API key check removed as process.env.API_KEY is assumed to be pre-configured.
-
   // Ensure clean base64 data for the API
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
@@ -46,8 +44,16 @@ export const interpretParkingSign = async (
     ${locationContext}
     ${permitContext}
 
-    LANGUAGE STYLE: Use very simple English. Avoid technical jargon. Instead of "1P", say "1 hour". Instead of "Metered", say "Paid parking".
-    OUTPUT: Return JSON with errorInfo and results.
+    AUSTRALIAN PARKING LOGIC RULES:
+    1. TIME LIMITS: '1P' means 1 hour, '2P' means 2 hours, '1/2P' means 30 mins, etc.
+    2. PAYMENT: Parking is ONLY "Paid" if the sign explicitly contains keywords like "METER", "TICKET", "PAY", "PAID", or "FEES" for the CURRENT time slot. 
+    3. FREE PARKING: If the sign mentions "METER" for weekdays but NOT for the current time/day (e.g. Sunday), the parking is FREE for that slot. 
+    4. ABSENCE OF METER: If there is no mention of payment keywords for the current applicable rule, it is FREE. Do NOT assume it is paid just because it is a timed zone.
+
+    OUTPUT GUIDELINES:
+    - LANGUAGE: Use very simple English. Avoid technical jargon.
+    - SUMMARY: The 'summary' field MUST explicitly state if parking is "Free" or "Paid" (e.g., "1 hour Free parking", "Unlimited Paid parking").
+    - RESULTS: Return JSON with errorInfo and results.
   `;
 
   const MAX_RETRIES = 2;
@@ -55,8 +61,6 @@ export const interpretParkingSign = async (
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // Create a fresh instance for each attempt to ensure the latest API key is used
-      // Switched to gemini-3-flash-preview for maximum performance and lower latency
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', 
@@ -105,7 +109,6 @@ export const interpretParkingSign = async (
         }
       });
 
-      // Extract text output using the correct property access
       const resultText = response.text?.trim();
       if (!resultText) throw new Error("The AI didn't give an answer. Please try again.");
       return JSON.parse(resultText) as ParkingInterpretation;
@@ -119,7 +122,6 @@ export const interpretParkingSign = async (
 
       if ((isNetworkError || isOverloaded) && attempt < MAX_RETRIES) {
         const backoffTime = Math.pow(2, attempt) * 1000 + (Math.random() * 500);
-        console.warn(`Retrying... (Attempt ${attempt + 1})`);
         await sleep(backoffTime);
         continue;
       }

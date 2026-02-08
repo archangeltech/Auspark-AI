@@ -21,7 +21,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.0.7';
+const APP_VERSION = '1.0.8';
 const MAX_HISTORY_ITEMS = 8; 
 
 const LOADING_MESSAGES = [

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types.ts';
 import { dbService } from '../services/dbService.ts';
@@ -75,6 +76,7 @@ const Results: React.FC<ResultsProps> = ({
     const WEB3FORMS_ACCESS_KEY = "af4bf796-f781-401e-ad3c-f6668d08fa52";
 
     try {
+      // 1. Primary Action: Save to Supabase (Most reliable & critical)
       const saveResult = await dbService.saveReport({
         userEmail: profile?.email || 'anonymous',
         issueCategory: reportIssue,
@@ -91,11 +93,16 @@ const Results: React.FC<ResultsProps> = ({
         throw new Error(saveResult.error || 'Failed to save report to database');
       }
 
+      // If we got here, the report is SAFELY in the database.
+      // We can now safely assume "Success" even if the email notification fails.
       const imageUrl = saveResult.imageUrl;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const emailMessage = `
+      // 2. Secondary Action: Notify via Email (Best-effort notification)
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // Shorter timeout for secondary action
+
+        const emailMessage = `
 🚗 PARKING SIGN READER - ISSUE REPORT
 📋 Category: ${reportIssue}
 👤 User: ${profile?.fullName || 'Anonymous'} (${profile?.email || 'N/A'})
@@ -104,26 +111,35 @@ const Results: React.FC<ResultsProps> = ({
 💬 AI Explanation: ${activeResult.explanation}
 🔗 Image: ${imageUrl || 'No image link'}
 ⏰ Date: ${new Date().toLocaleString('en-AU')}
-      `.trim();
+        `.trim();
 
-      const res = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          access_key: WEB3FORMS_ACCESS_KEY,
-          subject: `🚗 Parking Report - ${reportIssue}`,
-          from_name: profile?.fullName || "App User",
-          message: emailMessage,
-        }),
-      });
+        const res = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: `🚗 Parking Report - ${reportIssue}`,
+            from_name: profile?.fullName || "App User",
+            from_email: profile?.email || "anonymous@example.com",
+            message: emailMessage,
+          }),
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) {
+          console.warn("Email alert service returned non-OK status, but report was saved to DB.");
+        }
+      } catch (emailErr) {
+        // Silently catch email errors if DB save was successful
+        console.error("Secondary email notification failed:", emailErr);
+      }
 
-      if (!res.ok) throw new Error(`Email service error`);
+      // Final result is success because the DB save worked
       setReportSuccess(true);
     } catch (err: any) {
-      setReportError(err.message || "Failed to send report. Please try again.");
+      setReportError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSendingReport(false);
     }
@@ -251,9 +267,13 @@ const Results: React.FC<ResultsProps> = ({
             <div className="p-10 space-y-8 overflow-y-auto scrollbar-hide">
               {reportSuccess ? (
                 <div className="text-center py-4">
-                   <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[36px] flex items-center justify-center mx-auto mb-8 shadow-inner"><svg className="w-12 h-12" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg></div>
+                   <div className="w-24 h-24 bg-emerald-100 rounded-[36px] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                     <svg className="w-12 h-12 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                     </svg>
+                   </div>
                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Submitted!</h3>
-                   <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">Thank you! Your report has been uploaded.</p>
+                   <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">Thank you! Your report has been submitted.</p>
                    <button onClick={closeReportModal} className="mt-10 w-full bg-slate-900 text-white h-20 rounded-[32px] font-black active:scale-95 transition-all">Back</button>
                 </div>
               ) : (
@@ -263,7 +283,7 @@ const Results: React.FC<ResultsProps> = ({
                   </div>
                   <textarea placeholder="Describe the interpretation error..." value={reportDescription} onChange={(e) => setReportDescription(e.target.value)} className="w-full h-40 p-6 rounded-[32px] border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-sm resize-none" />
                   {reportError && <div className="bg-rose-50 border-2 border-rose-200 rounded-3xl p-4"><p className="text-rose-600 text-xs font-black uppercase text-center">{reportError}</p></div>}
-                  <button onClick={handleSendReport} disabled={isSendingReport || !reportIssue || !reportDescription.trim()} className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black disabled:opacity-30 shadow-xl active:scale-95 transition-all text-lg tracking-tight">{isSendingReport ? 'Uploading...' : 'Submit Report'}</button>
+                  <button onClick={handleSendReport} disabled={isSendingReport || !reportIssue || !reportDescription.trim()} className="w-full bg-slate-900 text-white h-20 rounded-[32px] font-black disabled:opacity-30 shadow-xl active:scale-95 transition-all text-lg tracking-tight">{isSendingReport ? 'Processing...' : 'Submit Report'}</button>
                 </>
               )}
             </div>
