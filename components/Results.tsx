@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ParkingInterpretation, DirectionalResult, UserProfile } from '../types.ts';
+import { ParkingStatus, ParkingInterpretation, DirectionalResult, UserProfile } from '../types.ts';
 import { dbService } from '../services/dbService.ts';
 
 interface ResultsProps {
@@ -52,6 +52,7 @@ const Results: React.FC<ResultsProps> = ({
 
   const activeResult: DirectionalResult = data.results[activeIdx] || data.results[0];
   const isAllowed = activeResult?.canParkNow;
+  const isResidentPermitApplied = activeResult?.permitApplied?.toLowerCase().includes('resident');
 
   const formattedTimestamp = scanTimestamp 
     ? new Date(scanTimestamp).toLocaleString('en-AU', {
@@ -76,7 +77,6 @@ const Results: React.FC<ResultsProps> = ({
     const WEB3FORMS_ACCESS_KEY = "af4bf796-f781-401e-ad3c-f6668d08fa52";
 
     try {
-      // 1. Primary Action: Save to Supabase (Most reliable & critical)
       const saveResult = await dbService.saveReport({
         userEmail: profile?.email || 'anonymous',
         issueCategory: reportIssue,
@@ -93,14 +93,11 @@ const Results: React.FC<ResultsProps> = ({
         throw new Error(saveResult.error || 'Failed to save report to database');
       }
 
-      // If we got here, the report is SAFELY in the database.
-      // We can now safely assume "Success" even if the email notification fails.
       const imageUrl = saveResult.imageUrl;
 
-      // 2. Secondary Action: Notify via Email (Best-effort notification)
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // Shorter timeout for secondary action
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const emailMessage = `
 🚗 PARKING SIGN READER - ISSUE REPORT
@@ -132,11 +129,9 @@ const Results: React.FC<ResultsProps> = ({
           console.warn("Email alert service returned non-OK status, but report was saved to DB.");
         }
       } catch (emailErr) {
-        // Silently catch email errors if DB save was successful
         console.error("Secondary email notification failed:", emailErr);
       }
 
-      // Final result is success because the DB save worked
       setReportSuccess(true);
     } catch (err: any) {
       setReportError(err.message || "Something went wrong. Please try again.");
@@ -225,8 +220,26 @@ const Results: React.FC<ResultsProps> = ({
              <p className="text-slate-900 font-bold text-lg leading-snug italic">"{activeResult.explanation}"</p>
           </div>
 
+          {isResidentPermitApplied && isAllowed && (
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-[32px] mb-8 animate-fade-in shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-amber-500 text-white rounded-lg flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <h5 className="text-[11px] font-black uppercase tracking-widest text-amber-700">Resident Permits</h5>
+              </div>
+              <p className="text-amber-800 text-[13px] font-bold leading-relaxed">
+                ⚠️ <span className="text-amber-900">Important Check:</span> We can't verify if your permit matches this exact zone. 
+                Please check the sign's area code (e.g. Zone A) against your permit. 
+                If it doesn't match, you must follow the standard rules listed below.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3 mb-10">
-            <h4 className="text-[10px] font-black uppercase text-slate-300 tracking-[0.2em] px-2 mb-4">Detected Rules</h4>
+            <h4 className="text-[10px] font-black uppercase text-slate-300 tracking-[0.2em] px-2 mb-4">
+              {isResidentPermitApplied ? 'Standard Rules & Restrictions' : 'Detected Rules'}
+            </h4>
             {activeResult.rules.map((rule, idx) => (
               <div key={idx} className="flex items-start gap-4 bg-white border border-slate-100 p-5 rounded-3xl shadow-sm">
                  <div className="w-6 h-6 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center shrink-0 mt-0.5"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></div>

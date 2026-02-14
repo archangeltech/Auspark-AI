@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserProfile } from '../types.ts';
 
@@ -148,23 +149,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
             { id: 'hasBusPermit', label: 'Bus / Auth. Vehicle', icon: '🚌' },
             { id: 'hasTaxiPermit', label: 'Taxi', icon: '🚕' },
           ].map(item => (
-            <button key={item.id} onClick={() => handleInputChange(item.id as keyof UserProfile, !profile[item.id as keyof UserProfile])} className={`p-4 rounded-2xl border-2 flex items-center gap-4 text-left transition-all active:scale-[0.98] ${profile[item.id as keyof UserProfile] ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-white'}`}>
-              <span className="text-xl">{item.icon}</span><span className="font-bold flex-1">{item.label}</span>
-              {profile[item.id as keyof UserProfile] && <div className="bg-emerald-500 rounded-full p-1"><svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></div>}
-            </button>
+            <React.Fragment key={item.id}>
+              <button onClick={() => handleInputChange(item.id as keyof UserProfile, !profile[item.id as keyof UserProfile])} className={`p-4 rounded-2xl border-2 flex items-center gap-4 text-left transition-all active:scale-[0.98] ${profile[item.id as keyof UserProfile] ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-white'}`}>
+                <span className="text-xl">{item.icon}</span><span className="font-bold flex-1">{item.label}</span>
+                {profile[item.id as keyof UserProfile] && <div className="bg-emerald-500 rounded-full p-1"><svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></div>}
+              </button>
+            </React.Fragment>
           ))}
-          {profile.hasResidentPermit && (
-            <div className="animate-fade-in">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Resident Area / Zone</label>
-              <input 
-                type="text" 
-                placeholder="e.g. Area 5 or Zone B" 
-                value={profile.residentArea} 
-                onChange={(e) => handleInputChange('residentArea', e.target.value)} 
-                className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 font-bold outline-none focus:border-emerald-500 transition-colors" 
-              />
-            </div>
-          )}
         </div>
 
         {initialProfile && (

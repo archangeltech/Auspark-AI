@@ -21,7 +21,7 @@ export const interpretParkingSign = async (
   const permitContext = `
     USER PERMITS & VEHICLE TYPE (EXEMPTIONS):
     - Disability Permit (MPS/ADP): ${profile.hasDisabilityPermit}
-    - Resident Permit: ${profile.hasResidentPermit} (Area: ${profile.residentArea || 'N/A'})
+    - Resident Permit / Designated permit zone: ${profile.hasResidentPermit} (Zone: ${profile.residentArea || 'N/A'})
     - Loading Vehicle (Truck/Commercial): ${profile.hasLoadingVehicle}
     - Horse carriage: ${profile.hasHorseCarriage}
     - Bus Permit / Authorized Vehicle: ${profile.hasBusPermit}
@@ -53,6 +53,8 @@ export const interpretParkingSign = async (
     OUTPUT GUIDELINES:
     - LANGUAGE: Use very simple English. Avoid technical jargon.
     - SUMMARY: The 'summary' field MUST explicitly state if parking is "Free" or "Paid" (e.g., "1 hour Free parking", "Unlimited Paid parking").
+    - RULES: ALWAYS list the standard rules (the rules that would apply if the user DID NOT have a permit) even if you apply a permit exemption. 
+    - PERMIT_APPLIED: If a Resident Permit is applied, clarify that it only applies IF the user's zone matches the sign's zone.
     - RESULTS: Return JSON with errorInfo and results.
   `;
 
