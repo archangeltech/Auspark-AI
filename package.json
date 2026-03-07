@@ -1,12 +1,12 @@
-
 {
   "name": "auspark-ai",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "lint": "tsc --noEmit",
     "preview": "vite preview",
     "cap:sync": "npx cap sync",
     "cap:open:ios": "npx cap open ios",
@@ -21,8 +21,10 @@
     "@capacitor/status-bar": "^7.0.0",
     "@google/genai": "^1.38.0",
     "@supabase/supabase-js": "^2.48.1",
+    "@tailwindcss/vite": "^4.2.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0",

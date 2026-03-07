@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { UserProfile, ParkingReport } from "../types.ts";
 
 // Access variables injected by Vite
-const supabaseUrl = (typeof process !== 'undefined' && process.env.SUPABASE_URL) || '';
-const supabaseAnonKey = (typeof process !== 'undefined' && process.env.SUPABASE_ANON_KEY) || '';
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
 
 const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
