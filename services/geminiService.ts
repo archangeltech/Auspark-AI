@@ -9,17 +9,16 @@ export const interpretParkingSign = async (
   currentTime: string,
   userDay: string,
   profile: UserProfile,
-  location?: { lat: number; lng: number },
-  customApiKey?: string
+  location?: { lat: number; lng: number }
 ): Promise<ParkingInterpretation> => {
   // Ensure clean base64 data for the API
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
-  // Use custom key if provided, otherwise fallback to environment variable
-  const apiKey = customApiKey || process.env.GEMINI_API_KEY;
+  // Use environment variable
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("API Key Missing. Please set your Gemini API key in the app settings to enable sign analysis.");
+    throw new Error("API Key Missing. Please ensure GEMINI_API_KEY is configured.");
   }
 
   const locationContext = location 

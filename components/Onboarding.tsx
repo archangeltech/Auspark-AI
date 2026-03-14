@@ -23,7 +23,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
     hasBusPermit: false,
     hasTaxiPermit: false,
     residentArea: '',
-    geminiApiKey: '',
   });
   const [showError, setShowError] = useState(false);
 
@@ -62,7 +61,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
         hasBusPermit: false,
         hasTaxiPermit: false,
         residentArea: '',
-        geminiApiKey: '',
       });
     }
   };
@@ -140,19 +138,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete, onDelete, onCancel,
         <div className="space-y-4 mb-10">
           <div><label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Full Name</label><input type="text" placeholder="Sarah Jenkins" value={profile.fullName} onChange={(e) => handleInputChange('fullName', e.target.value)} className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 font-bold outline-none focus:border-emerald-500 transition-colors" /></div>
           <div><label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Email Address *</label><input type="email" placeholder="sarah@example.com" value={profile.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`w-full p-4 rounded-xl border-2 bg-slate-50 font-bold outline-none transition-colors ${showError && !validateEmail(profile.email) ? 'border-rose-500' : 'border-slate-100 focus:border-emerald-500'}`} /></div>
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Gemini API Key (Optional)</label>
-            <input 
-              type="password" 
-              placeholder="Enter your API Key" 
-              value={profile.geminiApiKey || ''} 
-              onChange={(e) => handleInputChange('geminiApiKey', e.target.value)} 
-              className="w-full p-4 rounded-xl border-2 border-slate-100 bg-slate-50 font-bold outline-none focus:border-emerald-500 transition-colors" 
-            />
-            <p className="text-[9px] text-slate-400 mt-2 font-medium leading-relaxed">
-              Required for standalone apps. Get one for free at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-emerald-600 underline">AI Studio</a>.
-            </p>
-          </div>
         </div>
         <h3 className="text-xl font-black text-slate-900 mb-4">Permits</h3>
         <div className="grid gap-3 pb-8">

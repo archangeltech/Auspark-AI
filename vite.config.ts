@@ -21,14 +21,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: false,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor': ['react', 'react-dom', '@google/genai', '@supabase/supabase-js']
-          }
-        }
-      }
+      sourcemap: false
     },
     server: {
       port: 3000

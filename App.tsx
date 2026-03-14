@@ -21,7 +21,7 @@ const HISTORY_KEY = 'auspark_history_v2';
 const ONBOARDING_KEY = 'auspark_onboarding_done';
 const PROFILE_KEY = 'auspark_profile_v3'; 
 const LEGAL_ACCEPTED_KEY = 'auspark_legal_accepted_v1';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 const MAX_HISTORY_ITEMS = 8; 
 
 const LOADING_MESSAGES = [
@@ -63,7 +63,6 @@ const App: React.FC = () => {
       hasBusPermit: false,
       hasTaxiPermit: false,
       residentArea: '',
-      geminiApiKey: '',
     }
   });
 
@@ -102,10 +101,6 @@ const App: React.FC = () => {
     } catch (e) {
       console.warn("Recovery: Local data reset.");
     }
-
-    const handleEditProfileEvent = () => setIsEditingProfile(true);
-    window.addEventListener('auspark_edit_profile', handleEditProfileEvent);
-    return () => window.removeEventListener('auspark_edit_profile', handleEditProfileEvent);
   }, []);
 
   useEffect(() => {
@@ -198,7 +193,6 @@ const App: React.FC = () => {
         hasBusPermit: false,
         hasTaxiPermit: false,
         residentArea: '',
-        geminiApiKey: '',
       }
     });
     setShowOnboarding(true);
@@ -250,8 +244,7 @@ const App: React.FC = () => {
         timeStr, 
         dayStr, 
         state.profile, 
-        location,
-        state.profile.geminiApiKey
+        location
       );
       
       if (interpretation.errorInfo && interpretation.errorInfo.code !== 'SUCCESS') {
