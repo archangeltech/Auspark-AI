@@ -63,6 +63,7 @@ const App: React.FC = () => {
       hasBusPermit: false,
       hasTaxiPermit: false,
       residentArea: '',
+      geminiApiKey: '',
     }
   });
 
@@ -101,6 +102,10 @@ const App: React.FC = () => {
     } catch (e) {
       console.warn("Recovery: Local data reset.");
     }
+
+    const handleEditProfileEvent = () => setIsEditingProfile(true);
+    window.addEventListener('auspark_edit_profile', handleEditProfileEvent);
+    return () => window.removeEventListener('auspark_edit_profile', handleEditProfileEvent);
   }, []);
 
   useEffect(() => {
@@ -193,6 +198,7 @@ const App: React.FC = () => {
         hasBusPermit: false,
         hasTaxiPermit: false,
         residentArea: '',
+        geminiApiKey: '',
       }
     });
     setShowOnboarding(true);
@@ -239,7 +245,14 @@ const App: React.FC = () => {
       const dayStr = now.toLocaleDateString('en-AU', { weekday: 'long' });
 
       // Send the optimized image to Gemini Flash
-      const interpretation = await interpretParkingSign(optimizedImage, timeStr, dayStr, state.profile, location);
+      const interpretation = await interpretParkingSign(
+        optimizedImage, 
+        timeStr, 
+        dayStr, 
+        state.profile, 
+        location,
+        state.profile.geminiApiKey
+      );
       
       if (interpretation.errorInfo && interpretation.errorInfo.code !== 'SUCCESS') {
         setState(prev => ({ 
@@ -275,7 +288,7 @@ const App: React.FC = () => {
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
-        error: "Analysis failed. Please try again."
+        error: err.message || "Analysis failed. Please try again."
       }));
     }
   };

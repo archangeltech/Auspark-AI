@@ -58,6 +58,21 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose, us
         </div>
         <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh] scrollbar-hide">
           <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">AI Configuration</h3>
+            <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
+              <p className="text-[11px] text-emerald-700 mb-3 font-bold leading-relaxed">
+                Standalone apps require a personal Gemini API key. If you are seeing "Analysis Failed", ensure your key is set here.
+              </p>
+              <button 
+                onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('auspark_edit_profile')); }}
+                className="w-full bg-emerald-600 text-white h-14 rounded-xl font-black text-sm"
+              >
+                Update API Key in Profile
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Data & Privacy</h3>
             <button onClick={handleHardReset} className="w-full bg-slate-100 text-slate-900 h-14 rounded-2xl font-black text-sm">Clear Local Data</button>
             {userEmail && (

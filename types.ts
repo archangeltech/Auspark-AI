@@ -16,6 +16,7 @@ export interface UserProfile {
   hasBusPermit: boolean;
   hasTaxiPermit: boolean;
   residentArea?: string;
+  geminiApiKey?: string;
   lastSynced?: number;
 }
 
