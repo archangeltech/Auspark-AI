@@ -154,8 +154,11 @@ const App: React.FC = () => {
   const saveProfile = async (profile: UserProfile) => {
     setIsSaving(true);
     try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      setState(prev => ({ ...prev, profile }));
+      // Sync with cloud (Supabase) if available, otherwise saves to localStorage
+      const updatedProfile = await dbService.saveProfile(profile);
+      
+      // Update local state with the profile (which may now have an ID and lastSynced timestamp)
+      setState(prev => ({ ...prev, profile: updatedProfile }));
 
       if (!localStorage.getItem(ONBOARDING_KEY)) {
         const now = getFormattedDate();
@@ -166,8 +169,9 @@ const App: React.FC = () => {
       localStorage.setItem(ONBOARDING_KEY, 'true');
       setShowOnboarding(false);
       setIsEditingProfile(false);
-    } catch (error) {
-      setStorageWarning("Storage full. Could not save profile.");
+    } catch (error: any) {
+      console.error("Profile save error:", error);
+      setStorageWarning(error.message || "Could not save profile.");
       setShowOnboarding(false);
       setIsEditingProfile(false);
     } finally {
@@ -176,7 +180,10 @@ const App: React.FC = () => {
   };
 
   const handleDeleteProfile = () => {
-    localStorage.clear();
+    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(ONBOARDING_KEY);
+    localStorage.removeItem(LEGAL_ACCEPTED_KEY);
     setState({
       image: null,
       interpretation: null,
@@ -239,13 +246,7 @@ const App: React.FC = () => {
       const dayStr = now.toLocaleDateString('en-AU', { weekday: 'long' });
 
       // Send the optimized image to Gemini Flash
-      const interpretation = await interpretParkingSign(
-        optimizedImage, 
-        timeStr, 
-        dayStr, 
-        state.profile, 
-        location
-      );
+      const interpretation = await interpretParkingSign(optimizedImage, timeStr, dayStr, state.profile, location);
       
       if (interpretation.errorInfo && interpretation.errorInfo.code !== 'SUCCESS') {
         setState(prev => ({ 
@@ -281,7 +282,7 @@ const App: React.FC = () => {
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
-        error: err.message || "Analysis failed. Please try again."
+        error: "Analysis failed. Please try again."
       }));
     }
   };

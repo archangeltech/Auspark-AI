@@ -14,13 +14,6 @@ export const interpretParkingSign = async (
   // Ensure clean base64 data for the API
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
-  // Use environment variable
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("API Key Missing. Please ensure GEMINI_API_KEY is configured.");
-  }
-
   const locationContext = location 
     ? `Location: Lat ${location.lat.toFixed(4)}, Lng ${location.lng.toFixed(4)}.`
     : "Location not provided.";
@@ -70,7 +63,7 @@ export const interpretParkingSign = async (
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', 
         contents: {

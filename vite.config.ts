@@ -7,24 +7,36 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, (process as any).cwd(), '');
   
   // Prioritize shell environment variables, then .env file variables
-  const apiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || '';
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || env.GEMINI_API_KEY || env.API_KEY || env.VITE_API_KEY || '';
   const supabaseUrl = process.env.SUPABASE_URL || env.SUPABASE_URL || '';
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || '';
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+    ],
     define: {
       // These will be replaced with actual strings during build/dev
       'process.env.GEMINI_API_KEY': JSON.stringify(apiKey),
+      'process.env.API_KEY': JSON.stringify(apiKey),
       'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl),
       'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey)
     },
     build: {
       outDir: 'dist',
-      sourcemap: false
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor': ['react', 'react-dom', '@google/genai', '@supabase/supabase-js']
+          }
+        }
+      }
     },
     server: {
-      port: 3000
+      port: 3000,
+      host: '0.0.0.0'
     }
   };
 });

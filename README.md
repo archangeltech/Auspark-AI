@@ -4,7 +4,7 @@
 The app requires several keys to function correctly. Create a file named `.env` in the root directory:
 
 ```env
-API_KEY=your_gemini_key
+GEMINI_API_KEY=your_gemini_key
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 ```

@@ -75,7 +75,7 @@ const HowToUseModal: React.FC<HowToUseModalProps> = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-[9999] grid place-items-center p-6">
       <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-sm rounded-[56px] overflow-hidden shadow-2xl animate-fade-in max-h-[90dvh] flex flex-col pointer-events-auto border border-slate-100">
+      <div className="relative bg-white w-full max-w-sm rounded-[56px] overflow-hidden shadow-2xl animate-fade-in flex flex-col pointer-events-auto border border-slate-100 max-h-[calc(100vh-48px)]">
         <div className="p-10 pb-6 flex items-center justify-between shrink-0">
           <h2 className="text-[32px] font-black text-slate-900 tracking-tight">Scanning Tips</h2>
           <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
@@ -85,9 +85,9 @@ const HowToUseModal: React.FC<HowToUseModalProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
         
-        <div className="w-full h-px bg-slate-100 shrink-0" />
+        <div className="w-full h-px bg-slate-100 mb-2 shrink-0" />
         
-        <div className="px-10 py-8 space-y-10 overflow-y-auto scrollbar-hide">
+        <div className="px-10 py-8 space-y-10 overflow-y-auto flex-1 custom-scrollbar">
           {tips.map((tip, idx) => (
             <div key={idx} className="flex gap-6 items-start">
               <div className="shrink-0 pt-1">

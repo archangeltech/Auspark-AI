@@ -18,7 +18,14 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose, us
       "CLEAR ALL LOCAL DATA:\n\nThis will delete your local permits, history, and profile settings. This cannot be undone."
     );
     if (confirmed) {
-      localStorage.clear();
+      const keys = [
+        'auspark_history_v2',
+        'auspark_onboarding_done',
+        'auspark_profile_v3',
+        'auspark_legal_accepted_v1'
+      ];
+      keys.forEach(k => localStorage.removeItem(k));
+      
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         for (const r of regs) await r.unregister();
@@ -37,7 +44,15 @@ const AppSettingsModal: React.FC<AppSettingsModalProps> = ({ isOpen, onClose, us
       try {
         // We still provide a way to delete reported issues from the cloud for privacy
         await dbService.deleteProfile(userEmail);
-        localStorage.clear();
+        
+        const keys = [
+          'auspark_history_v2',
+          'auspark_onboarding_done',
+          'auspark_profile_v3',
+          'auspark_legal_accepted_v1'
+        ];
+        keys.forEach(k => localStorage.removeItem(k));
+
         alert("Your cloud reports and local data have been deleted.");
         window.location.reload();
       } catch (err: any) {
