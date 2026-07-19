@@ -17,41 +17,56 @@ export const dbService = {
       return offlineProfile;
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert({
-        email: profile.email,
-        full_name: profile.fullName,
-        has_disability_permit: profile.hasDisabilityPermit,
-        has_resident_permit: profile.hasResidentPermit,
-        has_loading_vehicle: profile.hasLoadingVehicle,
-        has_horse_carriage: profile.hasHorseCarriage,
-        has_bus_permit: profile.hasBusPermit,
-        has_taxi_permit: profile.hasTaxiPermit,
-        resident_area: profile.residentArea,
-        last_synced: new Date().toISOString()
-      }, { onConflict: 'email' })
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          email: profile.email,
+          full_name: profile.fullName,
+          has_disability_permit: profile.hasDisabilityPermit,
+          has_resident_permit: profile.hasResidentPermit,
+          has_loading_vehicle: profile.hasLoadingVehicle,
+          has_horse_carriage: profile.hasHorseCarriage,
+          has_bus_permit: profile.hasBusPermit,
+          has_taxi_permit: profile.hasTaxiPermit,
+          resident_area: profile.residentArea,
+          last_synced: new Date().toISOString()
+        }, { onConflict: 'email' })
+        .select()
+        .single();
 
-    if (error) throw new Error(`Supabase Error: ${error.message}`);
+      if (error) {
+        console.error("Supabase upsert error:", error);
+        throw new Error(`Supabase Error: ${error.message}`);
+      }
 
-    const updatedProfile: UserProfile = {
-      id: data.id,
-      fullName: data.full_name,
-      email: data.email,
-      hasDisabilityPermit: data.has_disability_permit,
-      hasResidentPermit: data.has_resident_permit,
-      hasLoadingVehicle: data.has_loading_vehicle,
-      hasHorseCarriage: data.has_horse_carriage,
-      hasBusPermit: data.has_bus_permit,
-      hasTaxiPermit: data.has_taxi_permit,
-      residentArea: data.resident_area,
-      lastSynced: new Date(data.last_synced).getTime()
-    };
+      const updatedProfile: UserProfile = {
+        id: data.id,
+        fullName: data.full_name,
+        email: data.email,
+        hasDisabilityPermit: data.has_disability_permit,
+        hasResidentPermit: data.has_resident_permit,
+        hasLoadingVehicle: data.has_loading_vehicle,
+        hasHorseCarriage: data.has_horse_carriage,
+        hasBusPermit: data.has_bus_permit,
+        hasTaxiPermit: data.has_taxi_permit,
+        residentArea: data.resident_area,
+        lastSynced: new Date(data.last_synced).getTime()
+      };
 
-    localStorage.setItem('auspark_profile_v3', JSON.stringify(updatedProfile));
-    return updatedProfile;
+      localStorage.setItem('auspark_profile_v3', JSON.stringify(updatedProfile));
+      return updatedProfile;
+    } catch (err: any) {
+      console.warn("Supabase saveProfile connection failed, falling back to local storage:", err);
+      // Fallback: save locally and let the user continue using the app
+      const offlineProfile = { 
+        ...profile, 
+        lastSynced: profile.lastSynced || Date.now(), 
+        id: profile.id || crypto.randomUUID() 
+      };
+      localStorage.setItem('auspark_profile_v3', JSON.stringify(offlineProfile));
+      return offlineProfile;
+    }
   },
 
   async saveReport(report: ParkingReport): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
@@ -124,33 +139,43 @@ export const dbService = {
 
   async deleteProfile(email: string): Promise<void> {
     if (!supabase) return;
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('email', email);
-    if (error) throw new Error(`Deletion Error: ${error.message}`);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('email', email);
+      if (error) throw new Error(`Deletion Error: ${error.message}`);
+    } catch (err: any) {
+      console.warn("Supabase deleteProfile connection failed:", err);
+      // Let delete finish locally even if cloud delete failed or timed out
+    }
   },
 
   async fetchProfile(email: string): Promise<UserProfile | null> {
     if (!supabase) return null;
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', email)
-      .single();
-    if (error || !data) return null;
-    return {
-      id: data.id,
-      fullName: data.full_name,
-      email: data.email,
-      hasDisabilityPermit: data.has_disability_permit,
-      hasResidentPermit: data.has_resident_permit,
-      hasLoadingVehicle: data.has_loading_vehicle,
-      hasHorseCarriage: data.has_horse_carriage,
-      hasBusPermit: data.has_bus_permit,
-      hasTaxiPermit: data.has_taxi_permit,
-      residentArea: data.resident_area,
-      lastSynced: new Date(data.last_synced).getTime()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email)
+        .single();
+      if (error || !data) return null;
+      return {
+        id: data.id,
+        fullName: data.full_name,
+        email: data.email,
+        hasDisabilityPermit: data.has_disability_permit,
+        hasResidentPermit: data.has_resident_permit,
+        hasLoadingVehicle: data.has_loading_vehicle,
+        hasHorseCarriage: data.has_horse_carriage,
+        hasBusPermit: data.has_bus_permit,
+        hasTaxiPermit: data.has_taxi_permit,
+        residentArea: data.resident_area,
+        lastSynced: new Date(data.last_synced).getTime()
+      };
+    } catch (err) {
+      console.warn("Supabase fetchProfile connection failed:", err);
+      return null;
+    }
   }
 };
