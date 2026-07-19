@@ -37,7 +37,8 @@ create table reports (
   ai_summary text,
   ai_explanation text,
   image_attached boolean,
-  image_data text, -- base64
+  image_data text, -- base64 fallback
+  image_url text, -- public storage url
   source text,
   timestamp timestamptz default now()
 );
